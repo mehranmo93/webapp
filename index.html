@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Marketplace Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            direction: rtl;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            padding-top: 80px;
+        }
+
+        /* Header Styles */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 12px 16px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .store-selector {
+            flex: 1;
+            position: relative;
+        }
+
+        .store-selector-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s;
+        }
+
+        .store-selector-btn:hover {
+            background-color: #0077b3;
+        }
+
+        .store-selector-btn::after {
+            content: '▼';
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .store-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-top: 4px;
+            display: none;
+            z-index: 1001;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .store-dropdown.show {
+            display: block;
+        }
+
+        .store-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .store-option:last-child {
+            border-bottom: none;
+        }
+
+        .store-option:hover {
+            background-color: #f5f5f5;
+        }
+
+        .address-btn {
+            padding: 10px 20px;
+            background-color: #34c759;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+
+        .address-btn:hover {
+            background-color: #30b050;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 16px;
+            min-height: calc(100vh - 160px);
+        }
+
+        .search-results {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-thread {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            word-break: break-word;
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background-color: #0088cc;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-bot {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            color: #222;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-text {
+            white-space: pre-wrap;
+        }
+
+        .message-media {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message-media img {
+            width: 100%;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .message-media figcaption {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .message-location {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .message-location a {
+            color: #0088cc;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .message-location a:hover {
+            text-decoration: underline;
+        }
+
+        .location-coords {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .message-status {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            text-align: left;
+        }
+
+        .typing-dots::after {
+            content: '…';
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        .result-item {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-image {
+            width: 100%;
+            height: 200px;
+            background-color: #4caf50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .result-text {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .result-text-only {
+            padding: 16px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            padding: 12px 16px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            direction: rtl;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: #0088cc;
+        }
+
+        .search-btn {
+            width: 44px;
+            height: 44px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .search-btn:hover {
+            background-color: #0077b3;
+        }
+
+        .search-btn:active {
+            transform: scale(0.95);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .modal-btn-primary {
+            background-color: #0088cc;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: #0077b3;
+        }
+
+        .modal-btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px 12px;
+            }
+
+            .content-area {
+                padding: 12px;
+            }
+
+            .search-bar {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="store-selector">
+                <button class="store-selector-btn" id="storeSelectorBtn">
+                    جواهری ستارزاده
+                </button>
+                <div class="store-dropdown" id="storeDropdown">
+                    <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
+                    <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
+                    <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
+                </div>
+            </div>
+            <button class="address-btn" id="addressBtn">آدرس</button>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+        <div class="search-results chat-thread" id="searchResults">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <div>برای جستجو، متن خود را در کادر پایین وارد کنید</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Text box" />
+        <button class="search-btn" id="searchBtn">↑</button>
+    </div>
+
+    <!-- Address Modal -->
+    <div class="modal" id="addressModal">
+        <div class="modal-content">
+            <div class="modal-header">آدرس فروشگاه</div>
+            <div class="modal-body" id="modalAddress">
+                در حال بارگذاری...
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeModalBtn">بستن</button>
+                <button class="modal-btn modal-btn-primary" id="viewMapBtn">مشاهده روی نقشه</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        let isSending = false;
+
+        // Store list
+        const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲'];
+        let selectedStore = stores[0];
+
+        // DOM Elements
+        const storeSelectorBtn = document.getElementById('storeSelectorBtn');
+        const storeDropdown = document.getElementById('storeDropdown');
+        const addressBtn = document.getElementById('addressBtn');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const addressModal = document.getElementById('addressModal');
+        const modalAddress = document.getElementById('modalAddress');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const viewMapBtn = document.getElementById('viewMapBtn');
+
+        // Store selector functionality
+        storeSelectorBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            storeDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!storeSelectorBtn.contains(e.target) && !storeDropdown.contains(e.target)) {
+                storeDropdown.classList.remove('show');
+            }
+        });
+
+        // Store option selection
+        storeDropdown.querySelectorAll('.store-option').forEach(option => {
+            option.addEventListener('click', function() {
+                selectedStore = this.getAttribute('data-store');
+                storeSelectorBtn.textContent = selectedStore;
+                storeDropdown.classList.remove('show');
+            });
+        });
+
+        function clearEmptyState() {
+            const emptyState = searchResults.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+        }
+
+        function scrollToBottom() {
+            searchResults.scrollTop = searchResults.scrollHeight;
+        }
+
+        function appendMessage(role, content, options = {}) {
+            clearEmptyState();
+
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('message', role === 'user' ? 'message-user' : 'message-bot');
+
+            if (options.isPending) {
+                messageEl.classList.add('typing-dots');
+            }
+
+            if (typeof content === 'string') {
+                messageEl.textContent = content;
+            } else if (content instanceof Node) {
+                messageEl.appendChild(content);
+            } else {
+                messageEl.textContent = '';
+            }
+
+            searchResults.appendChild(messageEl);
+            scrollToBottom();
+
+            return messageEl;
+        }
+
+        function updateMessage(messageEl, content) {
+            if (!messageEl) return;
+            messageEl.classList.remove('typing-dots');
+
+            if (typeof content === 'string') {
+                messageEl.textContent = content;
+            } else if (content instanceof Node) {
+                messageEl.innerHTML = '';
+                messageEl.appendChild(content);
+            } else {
+                messageEl.textContent = '';
+            }
+
+            scrollToBottom();
+        }
+
+        function setSearchState(isLoading) {
+            isSending = isLoading;
+            searchBtn.disabled = isLoading;
+            if (!isLoading) {
+                searchInput.focus();
+            }
+        }
+
+        function createTextContent(text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-text';
+            wrapper.textContent = text;
+            return wrapper;
+        }
+
+        function createImageContent({ url, caption }) {
+            const figure = document.createElement('figure');
+            figure.className = 'message-media';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = caption || 'تصویر';
+            img.loading = 'lazy';
+            figure.appendChild(img);
+
+            if (caption) {
+                const figcaption = document.createElement('figcaption');
+                figcaption.textContent = caption;
+                figure.appendChild(figcaption);
+            }
+
+            return figure;
+        }
+
+        function createLocationContent({ latitude, longitude, text }) {
+            const container = document.createElement('div');
+            container.className = 'message-location';
+
+            const description = document.createElement('div');
+            description.textContent = text || 'موقعیت فروشگاه';
+
+            const link = document.createElement('a');
+            link.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'مشاهده روی نقشه';
+
+            const coords = document.createElement('div');
+            coords.className = 'location-coords';
+            coords.textContent = `${latitude}, ${longitude}`;
+
+            container.appendChild(description);
+            container.appendChild(coords);
+            container.appendChild(link);
+
+            return container;
+        }
+
+        function detectInlineImageSource(value) {
+            if (!value && value !== 0) {
+                return null;
+            }
+
+            const trimmed = String(value).trim();
+
+            if (!trimmed) {
+                return null;
+            }
+
+            if (trimmed.startsWith('data:image')) {
+                return trimmed;
+            }
+
+            if (/^https?:\/\/.+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(trimmed)) {
+                return trimmed;
+            }
+
+            const sanitized = trimmed.replace(/\s+/g, '');
+            const base64Hints = ['iVBOR', '/9j', 'R0lGOD', 'Qk2', 'Qk0', 'AAAB', 'UEsD'];
+            const looksBase64 = /^[A-Za-z0-9+/=]+$/.test(sanitized) && base64Hints.some(hint => sanitized.startsWith(hint));
+
+            if (looksBase64) {
+                let mime = 'image/jpeg';
+                if (sanitized.startsWith('iVBOR')) mime = 'image/png';
+                else if (sanitized.startsWith('R0lGOD')) mime = 'image/gif';
+                else if (sanitized.startsWith('Qk')) mime = 'image/bmp';
+
+                return `data:${mime};base64,${sanitized}`;
+            }
+
+            return null;
+        }
+
+        function inferResponseType(data) {
+            if (!data || typeof data !== 'object') {
+                return 'text';
+            }
+
+            if (data.type) {
+                return data.type;
+            }
+
+            if (data.latitude || data.lat) {
+                return 'location';
+            }
+
+            if (data.url || data.image || data.image_url || data.photo) {
+                return 'image';
+            }
+
+            return 'text';
+        }
+
+        const ARRAY_KEYS = ['items', 'results', 'data', 'messages', 'entries', 'list', 'payload', 'value'];
+
+        function normalizeResponse(raw) {
+            if (raw === null || raw === undefined) {
+                return [];
+            }
+
+            if (typeof raw === 'string' || typeof raw === 'number') {
+                const value = String(raw).trim();
+                const inlineImage = detectInlineImageSource(value);
+                if (inlineImage) {
+                    return [{ type: 'image', url: inlineImage }];
+                }
+                return [{ type: 'text', text: value }];
+            }
+
+            if (Array.isArray(raw)) {
+                return raw.flatMap(item => normalizeResponse(item));
+            }
+
+            if (typeof raw === 'object') {
+                for (const key of ARRAY_KEYS) {
+                    if (Array.isArray(raw[key])) {
+                        const expanded = raw[key].flatMap(item => normalizeResponse(item));
+                        if (expanded.length) {
+                            return expanded;
+                        }
+                    }
+                }
+
+                const type = inferResponseType(raw);
+                if (type === 'image') {
+                    let source = raw.url || raw.image || raw.image_url || raw.photo;
+                    if (!source && raw.data) {
+                        source = detectInlineImageSource(raw.data);
+                        if (!source) {
+                            const mime = raw.mime || raw.mimetype || 'image/jpeg';
+                            source = `data:${mime};base64,${String(raw.data).replace(/\s+/g, '')}`;
+                        }
+                    }
+
+                    if (source) {
+                        return [{
+                            type: 'image',
+                            url: source,
+                            caption: raw.caption || raw.text || raw.description || ''
+                        }];
+                    }
+                }
+
+                if (type === 'location') {
+                    return [{
+                        type: 'location',
+                        latitude: raw.latitude || raw.lat,
+                        longitude: raw.longitude || raw.lng || raw.lon,
+                        text: raw.text || raw.caption || raw.description || ''
+                    }];
+                }
+
+                const text = raw.text || raw.message || raw.caption || raw.description;
+                if (text) {
+                    return [{ type: 'text', text }];
+                }
+
+                return [{ type: 'text', text: JSON.stringify(raw, null, 2) }];
+            }
+
+            return [{ type: 'text', text: String(raw) }];
+        }
+
+        async function extractResponses(response) {
+            const rawContentType = response.headers.get('content-type') || '';
+            const contentType = rawContentType.toLowerCase();
+            const disposition = response.headers.get('content-disposition') || '';
+            const filenameSuggestsImage = /\.(png|jpe?g|gif|webp)/i.test(disposition);
+            const isImage = contentType.startsWith('image/');
+            const isBinary = contentType === 'application/octet-stream';
+
+            if (isImage || isBinary || (!contentType && filenameSuggestsImage)) {
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                return [{
+                    type: 'image',
+                    url: objectUrl,
+                    caption: response.headers.get('x-caption') || ''
+                }];
+            }
+
+            let payload;
+            try {
+                if (contentType.includes('application/json')) {
+                    payload = await response.json();
+                } else if (contentType.startsWith('text/') || contentType.includes('xml') || contentType.includes('html') || !contentType) {
+                    const text = await response.text();
+                    try {
+                        payload = text ? JSON.parse(text) : '';
+                    } catch {
+                        payload = text;
+                    }
+                } else {
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    return [{
+                        type: 'image',
+                        url: objectUrl,
+                        caption: response.headers.get('x-caption') || ''
+                    }];
+                }
+            } catch (error) {
+                console.error('Failed to parse response payload:', error);
+                payload = '';
+            }
+
+            return normalizeResponse(payload);
+        }
+
+        function renderMessageContent(targetEl, payload) {
+            if (!payload) {
+                updateMessage(targetEl, 'پاسخی دریافت نشد');
+                return;
+            }
+
+            if (payload.type === 'image' && payload.url) {
+                updateMessage(targetEl, createImageContent(payload));
+                return;
+            }
+
+            if (payload.type === 'location' && payload.latitude && payload.longitude) {
+                updateMessage(targetEl, createLocationContent(payload));
+                return;
+            }
+
+            updateMessage(targetEl, createTextContent(payload.text || 'پاسخی دریافت نشد'));
+        }
+
+        async function sendSearchQuery() {
+            if (isSending) {
+                return;
+            }
+
+            const query = searchInput.value.trim();
+
+            if (!query) {
+                return;
+            }
+
+            searchInput.value = '';
+
+            appendMessage('user', query);
+            const botPlaceholder = appendMessage('bot', 'در حال دریافت پاسخ...', { isPending: true });
+
+            setSearchState(true);
+
+            const payload = {
+                store: selectedStore,
+                query,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const responses = await extractResponses(response);
+
+                if (!response.ok) {
+                    const message = responses[0]?.text || 'خطای ناشناخته';
+                    throw new Error(message);
+                }
+
+                if (!responses.length) {
+                    updateMessage(botPlaceholder, 'پاسخی دریافت نشد');
+                } else {
+                    renderMessageContent(botPlaceholder, responses[0]);
+                    if (responses.length > 1) {
+                        responses.slice(1).forEach(item => {
+                            const extraMessage = appendMessage('bot', '');
+                            renderMessageContent(extraMessage, item);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('n8n webhook error:', error);
+                updateMessage(botPlaceholder, 'خطا در دریافت پاسخ. لطفاً دوباره تلاش کنید.');
+            } finally {
+                setSearchState(false);
+            }
+        }
+
+        // Search button click
+        searchBtn.addEventListener('click', sendSearchQuery);
+
+        // Enter key in search input
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendSearchQuery();
+            }
+        });
+
+        // Address functionality
+        function showAddressLocation() {
+            // Show modal
+            addressModal.classList.add('show');
+            modalAddress.textContent = 'در حال بارگذاری آدرس...';
+
+            // Prepare data for n8n webhook
+            const webhookData = {
+                store: selectedStore,
+                action: 'get_address',
+                timestamp: new Date().toISOString()
+            };
+
+            // Log to console (simulating webhook call)
+            console.log('Sending address request to n8n Webhook:', webhookData);
+            console.log('POST URL: https://your-n8n-webhook-url.com/webhook/address');
+
+            // Simulate API call delay
+            setTimeout(() => {
+                // Mock address data
+                const mockAddress = {
+                    text: 'تهران، خیابان ولیعصر، پلاک ۱۲۳، فروشگاه جواهری ستارزاده',
+                    latitude: 35.6892,
+                    longitude: 51.3890
+                };
+
+                modalAddress.textContent = mockAddress.text;
+                
+                // Store coordinates for map view
+                viewMapBtn.onclick = function() {
+                    openGoogleMaps(mockAddress.latitude, mockAddress.longitude);
+                };
+            }, 500);
+        }
+
+        function openGoogleMaps(lat, lng) {
+            const url = `https://www.google.com/maps?q=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+
+        // Address button click
+        addressBtn.addEventListener('click', showAddressLocation);
+
+        // Modal close functionality
+        closeModalBtn.addEventListener('click', function() {
+            addressModal.classList.remove('show');
+        });
+
+        // Close modal when clicking outside
+        addressModal.addEventListener('click', function(e) {
+            if (e.target === addressModal) {
+                addressModal.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
