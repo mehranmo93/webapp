@@ -704,7 +704,21 @@
             return 'text';
         }
 
-        const ARRAY_KEYS = ['items', 'results', 'data', 'messages', 'entries', 'list', 'payload', 'value'];
+        const ARRAY_KEYS = [
+            'items',
+            'results',
+            'data',
+            'messages',
+            'entries',
+            'list',
+            'payload',
+            'value',
+            'photos',
+            'images',
+            'media',
+            'gallery',
+            'files'
+        ];
 
         function normalizeResponse(raw) {
             if (raw === null || raw === undefined) {
