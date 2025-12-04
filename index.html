@@ -36,6 +36,56 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            justify-content: space-between;
+        }
+
+        .header-admin-mode .store-selector,
+        .header-admin-mode .address-btn,
+        .header-admin-mode .menu-btn {
+            display: none;
+        }
+
+        .header-admin-buttons {
+            display: none;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .header-admin-mode .header-admin-buttons {
+            display: flex;
+        }
+
+        .header-admin-mode .back-btn {
+            display: flex !important;
+        }
+
+        .header-admin-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .header-admin-btn-support {
+            background-color: #0088cc;
+            color: white;
+        }
+
+        .header-admin-btn-support:hover {
+            background-color: #0077b3;
+        }
+
+        .header-admin-btn-products {
+            background-color: #666;
+            color: white;
+        }
+
+        .header-admin-btn-products:hover {
+            background-color: #555;
         }
 
         .store-selector {
@@ -119,6 +169,104 @@
 
         .address-btn:hover {
             background-color: #30b050;
+        }
+
+        .menu-btn {
+            padding: 10px 16px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn:hover {
+            background-color: #555;
+        }
+
+        .menu-btn::before {
+            content: '☰';
+            font-size: 18px;
+        }
+
+        .back-btn {
+            padding: 10px 16px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+        }
+
+        .back-btn:hover {
+            background-color: #555;
+        }
+
+        .back-btn::before {
+            content: '←';
+            font-size: 20px;
+        }
+
+        .accordion-menu {
+            position: fixed;
+            top: 60px;
+            right: 16px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 1002;
+            min-width: 200px;
+            overflow: hidden;
+        }
+
+        .accordion-menu.show {
+            display: block;
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .accordion-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .accordion-item-content {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .accordion-item-content::after {
+            content: '›';
+            font-size: 18px;
+            color: #999;
         }
 
         /* Content Area */
@@ -418,6 +566,256 @@
             background-color: #d0d0d0;
         }
 
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            direction: rtl;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #0088cc;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            direction: rtl;
+            outline: none;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-textarea:focus {
+            border-color: #0088cc;
+        }
+
+        .form-submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .form-submit-btn:hover {
+            background-color: #0077b3;
+        }
+
+        .form-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .gold-price-container {
+            padding: 16px 0;
+        }
+
+        .gold-price-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .gold-price-item:last-child {
+            border-bottom: none;
+        }
+
+        .gold-price-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .gold-price-value {
+            color: #0088cc;
+            font-weight: 600;
+        }
+
+        /* Admin Dashboard */
+        .admin-dashboard {
+            display: none;
+            padding: 16px;
+            padding-bottom: 180px;
+            min-height: calc(100vh - 160px);
+            flex-direction: column;
+            position: relative;
+        }
+
+        .admin-dashboard.show {
+            display: flex;
+        }
+
+        .admin-buttons-top {
+            display: none;
+        }
+
+        .admin-buttons-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background-color: #f5f5f5;
+            z-index: 100;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-buttons-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .admin-buttons-row .admin-btn {
+            flex: 1;
+        }
+
+        .admin-btn {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            text-align: center;
+        }
+
+        .admin-btn:active {
+            transform: scale(0.98);
+        }
+
+        .admin-btn-support {
+            background-color: #0088cc;
+            color: white;
+        }
+
+        .admin-btn-support:hover {
+            background-color: #0077b3;
+        }
+
+        .admin-btn-products {
+            background-color: #666;
+            color: white;
+        }
+
+        .admin-btn-products:hover {
+            background-color: #555;
+        }
+
+        .admin-btn-update {
+            background-color: #34c759;
+            color: white;
+        }
+
+        .admin-btn-update:hover {
+            background-color: #30b050;
+        }
+
+        .admin-btn-delete {
+            background-color: #ff3b30;
+            color: white;
+        }
+
+        .admin-btn-delete:hover {
+            background-color: #e6342a;
+        }
+
+        .admin-btn-add {
+            background-color: #0a84ff;
+            color: white;
+        }
+
+        .admin-btn-add:hover {
+            background-color: #0071e3;
+        }
+
+        /* Colored Pages */
+        .colored-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .colored-page.show {
+            display: flex;
+        }
+
+        .colored-page.green {
+            background-color: #34c759;
+        }
+
+        .colored-page.red {
+            background-color: #ff3b30;
+        }
+
+        .colored-page-content {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .colored-page-content h2 {
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .colored-page-close {
+            margin-top: 16px;
+            padding: 10px 20px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .colored-page-close:hover {
+            background-color: #0077b3;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -455,28 +853,58 @@
 </head>
 <body>
     <!-- Header -->
-    <div class="header">
+    <div class="header" id="mainHeader">
         <div class="header-content">
-            <div class="store-selector">
-                <button class="store-selector-btn" id="storeSelectorBtn">
-                    جواهری ستارزاده
-                </button>
-                <div class="store-dropdown" id="storeDropdown">
-                    <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
-                    <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
-                    <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <div class="store-selector">
+                    <button class="store-selector-btn" id="storeSelectorBtn">
+                        جواهری ستارزاده
+                    </button>
+                    <div class="store-dropdown" id="storeDropdown">
+                        <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
+                        <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
+                        <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
+                    </div>
                 </div>
+                <button class="address-btn" id="addressBtn">آدرس</button>
             </div>
-            <button class="address-btn" id="addressBtn">آدرس</button>
+            <div class="header-admin-buttons">
+                <button class="header-admin-btn header-admin-btn-products" id="headerProductsBtn">10 محصول آخر</button>
+                <button class="header-admin-btn header-admin-btn-support" id="headerSupportBtn">پشتیبانی</button>
+            </div>
+            <button class="menu-btn" id="menuBtn"></button>
+            <button class="back-btn" id="backBtn" style="display: none;"></button>
+        </div>
+    </div>
+
+    <!-- Accordion Menu -->
+    <div class="accordion-menu" id="accordionMenu">
+        <div class="accordion-item" id="contactMenuItem">
+            <div class="accordion-item-content">ارتباط با ما</div>
+        </div>
+        <div class="accordion-item" id="loginMenuItem">
+            <div class="accordion-item-content">ورود</div>
         </div>
     </div>
 
     <!-- Content Area -->
-    <div class="content-area">
+    <div class="content-area" id="mainContentArea">
         <div class="search-results chat-thread" id="searchResults">
             <div class="empty-state">
                 <div class="empty-state-icon">🔍</div>
                 <div>برای جستجو، متن خود را در کادر پایین وارد کنید</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-dashboard" id="adminDashboard">
+        <div class="admin-buttons-top"></div>
+        <div class="admin-buttons-bottom">
+            <button class="admin-btn admin-btn-update" id="updatePricesBtn">آپدیت قیمت ها</button>
+            <div class="admin-buttons-row">
+                <button class="admin-btn admin-btn-add" id="addBtn">اضافه</button>
+                <button class="admin-btn admin-btn-delete" id="deleteEditBtn">حذف یا ادیت</button>
             </div>
         </div>
     </div>
@@ -501,8 +929,115 @@
         </div>
     </div>
 
+    <!-- Contact Us Modal -->
+    <div class="modal" id="contactModal">
+        <div class="modal-content">
+            <div class="modal-header">ارتباط با ما</div>
+            <div class="modal-body">
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label class="form-label" for="contactName">نام</label>
+                        <input type="text" class="form-input" id="contactName" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="contactPhone">شماره تماس</label>
+                        <input type="tel" class="form-input" id="contactPhone" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="contactText">متن</label>
+                        <textarea class="form-textarea" id="contactText" required></textarea>
+                    </div>
+                    <button type="submit" class="form-submit-btn" id="contactSubmitBtn">ارسال</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeContactModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">ورود</div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label" for="loginUsername">نام کاربری</label>
+                        <input type="text" class="form-input" id="loginUsername" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">رمز عبور</label>
+                        <input type="password" class="form-input" id="loginPassword" required />
+                    </div>
+                    <button type="submit" class="form-submit-btn" id="loginSubmitBtn">ورود</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeLoginModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gold Price Modal -->
+    <div class="modal" id="goldPriceModal">
+        <div class="modal-content">
+            <div class="modal-header">قیمت روز طلا</div>
+            <div class="modal-body">
+                <div id="goldPriceContainer" class="gold-price-container">
+                    <div class="loading">در حال بارگذاری...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeGoldPriceModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Modal -->
+    <div class="modal" id="supportModal">
+        <div class="modal-content">
+            <div class="modal-header">پشتیبانی</div>
+            <div class="modal-body">
+                <form id="supportForm">
+                    <div class="form-group">
+                        <label class="form-label" for="supportText">متن</label>
+                        <textarea class="form-textarea" id="supportText" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="supportNumber">شماره</label>
+                        <input type="tel" class="form-input" id="supportNumber" required />
+                    </div>
+                    <button type="submit" class="form-submit-btn" id="supportSubmitBtn">ارسال</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeSupportModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colored Pages -->
+    <div class="colored-page green" id="greenPage">
+        <div class="colored-page-content">
+            <h2>عملیات با موفقیت انجام شد</h2>
+            <button class="colored-page-close" id="closeGreenPageBtn">بستن</button>
+        </div>
+    </div>
+
+    <div class="colored-page red" id="redPage">
+        <div class="colored-page-content">
+            <h2>عملیات حذف انجام شد</h2>
+            <button class="colored-page-close" id="closeRedPageBtn">بستن</button>
+        </div>
+    </div>
+
     <script>
         const WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc5d867f-e95f-412f-921f-1819407f27fa';
+        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
+        const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         let isSending = false;
 
         // Store list
@@ -520,6 +1055,44 @@
         const modalAddress = document.getElementById('modalAddress');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const viewMapBtn = document.getElementById('viewMapBtn');
+        
+        // Menu and Accordion Elements
+        const menuBtn = document.getElementById('menuBtn');
+        const backBtn = document.getElementById('backBtn');
+        const accordionMenu = document.getElementById('accordionMenu');
+        const contactMenuItem = document.getElementById('contactMenuItem');
+        const loginMenuItem = document.getElementById('loginMenuItem');
+        
+        // Modal Elements
+        const contactModal = document.getElementById('contactModal');
+        const loginModal = document.getElementById('loginModal');
+        const goldPriceModal = document.getElementById('goldPriceModal');
+        const contactForm = document.getElementById('contactForm');
+        const loginForm = document.getElementById('loginForm');
+        const contactSubmitBtn = document.getElementById('contactSubmitBtn');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const closeContactModalBtn = document.getElementById('closeContactModalBtn');
+        const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
+        const closeGoldPriceModalBtn = document.getElementById('closeGoldPriceModalBtn');
+        const goldPriceContainer = document.getElementById('goldPriceContainer');
+        
+        // Admin Dashboard Elements
+        const mainHeader = document.getElementById('mainHeader');
+        const mainContentArea = document.getElementById('mainContentArea');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const headerSupportBtn = document.getElementById('headerSupportBtn');
+        const headerProductsBtn = document.getElementById('headerProductsBtn');
+        const updatePricesBtn = document.getElementById('updatePricesBtn');
+        const deleteEditBtn = document.getElementById('deleteEditBtn');
+        const addBtn = document.getElementById('addBtn');
+        const supportModal = document.getElementById('supportModal');
+        const supportForm = document.getElementById('supportForm');
+        const supportSubmitBtn = document.getElementById('supportSubmitBtn');
+        const closeSupportModalBtn = document.getElementById('closeSupportModalBtn');
+        const greenPage = document.getElementById('greenPage');
+        const redPage = document.getElementById('redPage');
+        const closeGreenPageBtn = document.getElementById('closeGreenPageBtn');
+        const closeRedPageBtn = document.getElementById('closeRedPageBtn');
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -978,6 +1551,412 @@
             if (e.target === addressModal) {
                 addressModal.classList.remove('show');
             }
+        });
+
+        // Menu button click - toggle accordion
+        menuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            accordionMenu.classList.toggle('show');
+        });
+
+        // Close accordion when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!menuBtn.contains(e.target) && !accordionMenu.contains(e.target)) {
+                accordionMenu.classList.remove('show');
+            }
+        });
+
+        // Accordion menu item clicks
+        contactMenuItem.addEventListener('click', function() {
+            accordionMenu.classList.remove('show');
+            contactModal.classList.add('show');
+        });
+
+        loginMenuItem.addEventListener('click', function() {
+            accordionMenu.classList.remove('show');
+            loginModal.classList.add('show');
+        });
+
+        // Contact form submission
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const text = document.getElementById('contactText').value.trim();
+
+            if (!name || !phone || !text) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            contactSubmitBtn.disabled = true;
+            contactSubmitBtn.textContent = 'در حال ارسال...';
+
+            try {
+                const response = await fetch(CONTACT_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'contact',
+                        name: name,
+                        phone: phone,
+                        text: text,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    alert('پیام شما با موفقیت ارسال شد');
+                    contactForm.reset();
+                    contactModal.classList.remove('show');
+                } else {
+                    alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+                alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
+            } finally {
+                contactSubmitBtn.disabled = false;
+                contactSubmitBtn.textContent = 'ارسال';
+            }
+        });
+
+        // Login form submission
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!username || !password) {
+                alert('لطفاً نام کاربری و رمز عبور را وارد کنید');
+                return;
+            }
+
+            loginSubmitBtn.disabled = true;
+            loginSubmitBtn.textContent = 'در حال ورود...';
+
+            try {
+                const response = await fetch(LOGIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: username,
+                        password: password,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    loginForm.reset();
+                    loginModal.classList.remove('show');
+                    // Show admin dashboard and hide main content
+                    mainContentArea.style.display = 'none';
+                    document.querySelector('.search-bar').style.display = 'none';
+                    mainHeader.classList.add('header-admin-mode');
+                    adminDashboard.classList.add('show');
+                } else {
+                    alert(data.message || 'نام کاربری یا رمز عبور اشتباه است');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('خطا در ورود. لطفاً دوباره تلاش کنید.');
+            } finally {
+                loginSubmitBtn.disabled = false;
+                loginSubmitBtn.textContent = 'ورود';
+            }
+        });
+
+        // Back button handler
+        backBtn.addEventListener('click', function() {
+            // Go back to main page
+            mainHeader.classList.remove('header-admin-mode');
+            adminDashboard.classList.remove('show');
+            mainContentArea.style.display = 'block';
+            document.querySelector('.search-bar').style.display = 'flex';
+        });
+
+        // Fetch gold prices
+        async function fetchGoldPrices() {
+            goldPriceContainer.innerHTML = '<div class="loading">در حال بارگذاری...</div>';
+
+            try {
+                const response = await fetch(GOLD_PRICE_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_gold_prices',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch gold prices');
+                }
+
+                const data = await response.json();
+                displayGoldPrices(data);
+            } catch (error) {
+                console.error('Gold price error:', error);
+                goldPriceContainer.innerHTML = '<div class="loading" style="color: #ff3b30;">خطا در دریافت قیمت‌ها. لطفاً دوباره تلاش کنید.</div>';
+            }
+        }
+
+        // Display gold prices
+        function displayGoldPrices(data) {
+            if (!data || typeof data !== 'object') {
+                goldPriceContainer.innerHTML = '<div class="loading">اطلاعاتی دریافت نشد</div>';
+                return;
+            }
+
+            let html = '';
+            
+            // If data is an array
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (typeof item === 'object') {
+                        Object.entries(item).forEach(([key, value]) => {
+                            html += `
+                                <div class="gold-price-item">
+                                    <span class="gold-price-label">${key}</span>
+                                    <span class="gold-price-value">${value}</span>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+            } else {
+                // If data is an object
+                Object.entries(data).forEach(([key, value]) => {
+                    if (typeof value === 'object' && value !== null) {
+                        html += `
+                            <div class="gold-price-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                                <span class="gold-price-label" style="font-size: 16px; font-weight: 600;">${key}</span>
+                        `;
+                        Object.entries(value).forEach(([subKey, subValue]) => {
+                            html += `
+                                <div style="display: flex; justify-content: space-between; width: 100%; padding-right: 16px;">
+                                    <span class="gold-price-label">${subKey}</span>
+                                    <span class="gold-price-value">${subValue}</span>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    } else {
+                        html += `
+                            <div class="gold-price-item">
+                                <span class="gold-price-label">${key}</span>
+                                <span class="gold-price-value">${value}</span>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            goldPriceContainer.innerHTML = html || '<div class="loading">اطلاعاتی دریافت نشد</div>';
+        }
+
+        // Close modals
+        closeContactModalBtn.addEventListener('click', function() {
+            contactModal.classList.remove('show');
+        });
+
+        closeLoginModalBtn.addEventListener('click', function() {
+            loginModal.classList.remove('show');
+        });
+
+        closeGoldPriceModalBtn.addEventListener('click', function() {
+            goldPriceModal.classList.remove('show');
+        });
+
+        // Close modals when clicking outside
+        contactModal.addEventListener('click', function(e) {
+            if (e.target === contactModal) {
+                contactModal.classList.remove('show');
+            }
+        });
+
+        loginModal.addEventListener('click', function(e) {
+            if (e.target === loginModal) {
+                loginModal.classList.remove('show');
+            }
+        });
+
+        goldPriceModal.addEventListener('click', function(e) {
+            if (e.target === goldPriceModal) {
+                goldPriceModal.classList.remove('show');
+            }
+        });
+
+        // Admin Dashboard Button Handlers
+        headerSupportBtn.addEventListener('click', function() {
+            supportModal.classList.add('show');
+        });
+
+        headerProductsBtn.addEventListener('click', async function() {
+            // 10 محصول آخر - trigger webhook
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'last_products',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                // Handle response if needed
+            } catch (error) {
+                console.error('Last products error:', error);
+            }
+        });
+
+        updatePricesBtn.addEventListener('click', async function() {
+            // آپدیت قیمت ها - trigger webhook
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'update_prices',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                if (response.ok) {
+                    alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
+                }
+            } catch (error) {
+                console.error('Update prices error:', error);
+                alert('خطا در به‌روزرسانی قیمت‌ها');
+            }
+        });
+
+        deleteEditBtn.addEventListener('click', async function() {
+            // حذف یا ادیت - trigger webhook and check response
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'delete_edit',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                const responseText = typeof data === 'string' ? data : (data.response || data.message || JSON.stringify(data));
+                
+                if (responseText === 'home/delete' || responseText.includes('home/delete')) {
+                    redPage.classList.add('show');
+                }
+            } catch (error) {
+                console.error('Delete/Edit error:', error);
+            }
+        });
+
+        addBtn.addEventListener('click', async function() {
+            // اضافه - trigger webhook and check response
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'add',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                const responseText = typeof data === 'string' ? data : (data.response || data.message || JSON.stringify(data));
+                
+                if (responseText === 'home/add' || responseText.includes('home/add')) {
+                    greenPage.classList.add('show');
+                }
+            } catch (error) {
+                console.error('Add error:', error);
+            }
+        });
+
+        // Support form submission
+        supportForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('supportText').value.trim();
+            const number = document.getElementById('supportNumber').value.trim();
+
+            if (!text || !number) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            supportSubmitBtn.disabled = true;
+            supportSubmitBtn.textContent = 'در حال ارسال...';
+
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'support',
+                        text: text,
+                        number: number,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    alert('پیام شما با موفقیت ارسال شد');
+                    supportForm.reset();
+                    supportModal.classList.remove('show');
+                } else {
+                    alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
+                }
+            } catch (error) {
+                console.error('Support form error:', error);
+                alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
+            } finally {
+                supportSubmitBtn.disabled = false;
+                supportSubmitBtn.textContent = 'ارسال';
+            }
+        });
+
+        // Close support modal
+        closeSupportModalBtn.addEventListener('click', function() {
+            supportModal.classList.remove('show');
+        });
+
+        supportModal.addEventListener('click', function(e) {
+            if (e.target === supportModal) {
+                supportModal.classList.remove('show');
+            }
+        });
+
+        // Close colored pages
+        closeGreenPageBtn.addEventListener('click', function() {
+            greenPage.classList.remove('show');
+        });
+
+        closeRedPageBtn.addEventListener('click', function() {
+            redPage.classList.remove('show');
         });
     </script>
 </body>
