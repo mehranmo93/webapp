@@ -798,6 +798,35 @@
             padding: 24px;
             max-width: 500px;
             margin: 0 auto;
+            position: relative;
+        }
+
+        .admin-page-back-btn {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            width: 44px;
+            height: 44px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+
+        .admin-page-back-btn:hover {
+            background-color: #555;
+        }
+
+        .admin-page-back-btn:active {
+            transform: scale(0.95);
         }
 
         .admin-form-group {
@@ -1177,6 +1206,7 @@
     <!-- Admin Add Page -->
     <div class="admin-page" id="addPage" style="display: none;">
         <div class="admin-page-content">
+            <button class="admin-page-back-btn" id="addPageBackBtn">←</button>
             <form id="addForm">
                 <div class="admin-form-group">
                     <label class="admin-form-label">بارگذاری تصویر</label>
@@ -1390,6 +1420,7 @@
         const imageInput = document.getElementById('imageInput');
         const imagePreview = document.getElementById('imagePreview');
         const addSubmitBtn = document.getElementById('addSubmitBtn');
+        const addPageBackBtn = document.getElementById('addPageBackBtn');
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -1978,10 +2009,11 @@
         // Back button handler
         backBtn.addEventListener('click', function() {
             // If on add page, go back to admin dashboard
-            if (addPage && addPage.style.display === 'block') {
+            if (addPage && (addPage.style.display === 'block' || addPage.classList.contains('show'))) {
                 addPage.classList.remove('show');
                 addPage.style.display = 'none';
                 adminDashboard.classList.add('show');
+                backBtn.style.display = 'none';
                 return;
             }
             
@@ -2521,9 +2553,31 @@
                                 </div>
                             `;
                         }
-                        addPage.classList.remove('show');
-                        addPage.style.display = 'none';
-                        adminDashboard.classList.add('show');
+                        
+                        // Check for nextpage in response
+                        const nextpage = data.nextpage || data.nextPage || '';
+                        
+                        if (nextpage === 'admin/add') {
+                            // Stay on add page - don't navigate away
+                            // Form is already reset above, user can add more items
+                        } else if (nextpage === 'login') {
+                            clearToken();
+                            requireAuth();
+                            addPage.classList.remove('show');
+                            addPage.style.display = 'none';
+                        } else if (nextpage === 'Home') {
+                            addPage.classList.remove('show');
+                            addPage.style.display = 'none';
+                            adminDashboard.classList.remove('show');
+                            mainHeader.classList.remove('header-admin-mode');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                        } else {
+                            // Default: go back to admin dashboard
+                            addPage.classList.remove('show');
+                            addPage.style.display = 'none';
+                            adminDashboard.classList.add('show');
+                        }
                     }
                 } catch (error) {
                     console.error('Add form error:', error);
@@ -2532,6 +2586,16 @@
                     addSubmitBtn.disabled = false;
                     addSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
                 }
+            });
+        }
+
+        // Add page back button handler
+        if (addPageBackBtn) {
+            addPageBackBtn.addEventListener('click', function() {
+                addPage.classList.remove('show');
+                addPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                backBtn.style.display = 'none';
             });
         }
     </script>
