@@ -1052,6 +1052,36 @@
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         let isSending = false;
+        
+        // Token and user management
+        function getToken() {
+            return localStorage.getItem('authToken');
+        }
+        
+        function getUsername() {
+            return localStorage.getItem('username');
+        }
+        
+        function setToken(token) {
+            if (token) {
+                localStorage.setItem('authToken', token);
+            } else {
+                localStorage.removeItem('authToken');
+            }
+        }
+        
+        function setUsername(username) {
+            if (username) {
+                localStorage.setItem('username', username);
+            } else {
+                localStorage.removeItem('username');
+            }
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+        }
 
         // Store list
         const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲'];
@@ -1668,7 +1698,10 @@
 
                 const data = await response.json();
                 
-                if (response.ok) {
+                if (response.ok && data.token) {
+                    // Store the token and username
+                    setToken(data.token);
+                    setUsername(username);
                     loginForm.reset();
                     loginModal.classList.remove('show');
                     // Show admin dashboard and hide main content
@@ -1690,7 +1723,8 @@
 
         // Back button handler
         backBtn.addEventListener('click', function() {
-            // Go back to main page
+            // Clear token and go back to main page
+            clearToken();
             mainHeader.classList.remove('header-admin-mode');
             adminDashboard.classList.remove('show');
             mainContentArea.style.display = 'block';
@@ -1819,6 +1853,8 @@
         headerProductsBtn.addEventListener('click', async function() {
             // 10 محصول آخر - trigger webhook
             try {
+                const token = getToken();
+                const username = getUsername();
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1826,6 +1862,8 @@
                     },
                     body: JSON.stringify({
                         action: 'last_products',
+                        token: token,
+                        username: username,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -1838,6 +1876,8 @@
         updatePricesBtn.addEventListener('click', async function() {
             // آپدیت قیمت ها - trigger webhook
             try {
+                const token = getToken();
+                const username = getUsername();
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1845,6 +1885,8 @@
                     },
                     body: JSON.stringify({
                         action: 'update_prices',
+                        token: token,
+                        username: username,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -1860,6 +1902,8 @@
         deleteEditBtn.addEventListener('click', async function() {
             // حذف یا ادیت - trigger webhook and check response
             try {
+                const token = getToken();
+                const username = getUsername();
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1867,6 +1911,8 @@
                     },
                     body: JSON.stringify({
                         action: 'delete_edit',
+                        token: token,
+                        username: username,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -1885,6 +1931,8 @@
         addBtn.addEventListener('click', async function() {
             // اضافه - trigger webhook and check response
             try {
+                const token = getToken();
+                const username = getUsername();
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1892,6 +1940,8 @@
                     },
                     body: JSON.stringify({
                         action: 'add',
+                        token: token,
+                        username: username,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -1923,6 +1973,8 @@
             supportSubmitBtn.textContent = 'در حال ارسال...';
 
             try {
+                const token = getToken();
+                const username = getUsername();
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1930,6 +1982,8 @@
                     },
                     body: JSON.stringify({
                         action: 'support',
+                        token: token,
+                        username: username,
                         text: text,
                         number: number,
                         timestamp: new Date().toISOString()
