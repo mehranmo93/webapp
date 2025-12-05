@@ -773,6 +773,150 @@
             background-color: #0071e3;
         }
 
+        /* Admin Pages */
+        .admin-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #f5f5f5;
+            z-index: 2000;
+            padding: 80px 16px 16px 16px;
+            overflow-y: auto;
+        }
+
+        .admin-page.show {
+            display: block;
+        }
+
+        .admin-page-content {
+            background-color: white;
+            border: 2px solid #0088cc;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .admin-form-group {
+            margin-bottom: 20px;
+        }
+
+        .admin-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .admin-form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0088cc;
+            border-radius: 8px;
+            font-size: 14px;
+            direction: rtl;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .admin-form-input:focus {
+            border-color: #0077b3;
+        }
+
+        .image-upload-area {
+            margin-top: 8px;
+        }
+
+        .image-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .image-preview {
+            margin-top: 12px;
+            width: 100%;
+            min-height: 200px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            background-color: #fafafa;
+        }
+
+        .image-preview:hover {
+            border-color: #0088cc;
+        }
+
+        .image-upload-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #666;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+        }
+
+        .upload-text {
+            font-size: 14px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .admin-send-btn {
+            width: 60px;
+            height: 60px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto 0;
+            box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3);
+        }
+
+        .admin-send-btn:hover {
+            background-color: #0077b3;
+            transform: scale(1.05);
+        }
+
+        .admin-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .admin-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-icon {
+            font-size: 24px;
+            line-height: 1;
+        }
+
         /* Colored Pages */
         .colored-page {
             display: none;
@@ -1030,6 +1174,37 @@
         </div>
     </div>
 
+    <!-- Admin Add Page -->
+    <div class="admin-page" id="addPage" style="display: none;">
+        <div class="admin-page-content">
+            <form id="addForm">
+                <div class="admin-form-group">
+                    <label class="admin-form-label">بارگذاری تصویر</label>
+                    <div class="image-upload-area">
+                        <input type="file" id="imageInput" accept="image/*" />
+                        <div class="image-preview" id="imagePreview">
+                            <div class="image-upload-placeholder">
+                                <span class="upload-icon">📎</span>
+                                <span class="upload-text">بارگذاری تصویر</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-form-label" for="goldCode">کد طلا</label>
+                    <input type="text" class="admin-form-input" id="goldCode" required />
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-form-label" for="productDescription">توضیحات محصول</label>
+                    <input type="text" class="admin-form-input" id="productDescription" required />
+                </div>
+                <button type="submit" class="admin-send-btn" id="addSubmitBtn">
+                    <span class="send-icon">↑</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Colored Pages -->
     <div class="colored-page green" id="greenPage">
         <div class="colored-page-content">
@@ -1081,6 +1256,80 @@
         function clearToken() {
             localStorage.removeItem('authToken');
             localStorage.removeItem('username');
+        }
+
+        // Check if user is authenticated
+        function isAuthenticated() {
+            const token = getToken();
+            return token !== null && token !== undefined && token !== '';
+        }
+
+        // Redirect to login if not authenticated
+        function requireAuth() {
+            if (!isAuthenticated()) {
+                clearToken();
+                mainHeader.classList.remove('header-admin-mode');
+                adminDashboard.classList.remove('show');
+                if (typeof addPage !== 'undefined' && addPage) {
+                    addPage.classList.remove('show');
+                    addPage.style.display = 'none';
+                }
+                if (typeof deleteEditPage !== 'undefined' && deleteEditPage) {
+                    deleteEditPage.classList.remove('show');
+                    deleteEditPage.style.display = 'none';
+                }
+                mainContentArea.style.display = 'block';
+                document.querySelector('.search-bar').style.display = 'flex';
+                loginModal.classList.add('show');
+                alert('لطفاً ابتدا وارد شوید');
+                return false;
+            }
+            return true;
+        }
+
+        // Helper function to send authenticated requests with token and username
+        async function sendAuthenticatedRequest(action, additionalData = {}) {
+            const token = getToken();
+            const username = getUsername();
+            
+            if (!token) {
+                alert('لطفاً ابتدا وارد شوید');
+                requireAuth();
+                return null;
+            }
+            
+            const payload = {
+                action: action,
+                token: token,
+                username: username,
+                timestamp: new Date().toISOString(),
+                ...additionalData
+            };
+            
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return null;
+                    }
+                    throw new Error(errorData.message || 'خطا در ارتباط با سرور');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`Error in ${action}:`, error);
+                throw error;
+            }
         }
 
         // Store list
@@ -1136,6 +1385,11 @@
         const redPage = document.getElementById('redPage');
         const closeGreenPageBtn = document.getElementById('closeGreenPageBtn');
         const closeRedPageBtn = document.getElementById('closeRedPageBtn');
+        const addPage = document.getElementById('addPage');
+        const addForm = document.getElementById('addForm');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const addSubmitBtn = document.getElementById('addSubmitBtn');
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -1723,7 +1977,23 @@
 
         // Back button handler
         backBtn.addEventListener('click', function() {
-            // Clear token and go back to main page
+            // If on add page, go back to admin dashboard
+            if (addPage && addPage.style.display === 'block') {
+                addPage.classList.remove('show');
+                addPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                return;
+            }
+            
+            // If on delete/edit page, go back to admin dashboard
+            if (typeof deleteEditPage !== 'undefined' && deleteEditPage && deleteEditPage.style.display === 'block') {
+                deleteEditPage.classList.remove('show');
+                deleteEditPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                return;
+            }
+            
+            // Otherwise, clear token and go back to main page
             clearToken();
             mainHeader.classList.remove('header-admin-mode');
             adminDashboard.classList.remove('show');
@@ -1852,9 +2122,17 @@
 
         headerProductsBtn.addEventListener('click', async function() {
             // 10 محصول آخر - trigger webhook
+            if (!requireAuth()) return;
+            
             try {
                 const token = getToken();
                 const username = getUsername();
+                
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    return;
+                }
+                
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1867,17 +2145,38 @@
                         timestamp: new Date().toISOString()
                     })
                 });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && errorData.message.includes('token') || errorData.message && errorData.message.includes('unauthorized')) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                }
+                
+                const data = await response.json();
                 // Handle response if needed
+                console.log('Last products response:', data);
             } catch (error) {
                 console.error('Last products error:', error);
+                alert('خطا در دریافت اطلاعات');
             }
         });
 
         updatePricesBtn.addEventListener('click', async function() {
             // آپدیت قیمت ها - trigger webhook
+            if (!requireAuth()) return;
+            
             try {
                 const token = getToken();
                 const username = getUsername();
+                
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    return;
+                }
+                
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1890,6 +2189,18 @@
                         timestamp: new Date().toISOString()
                     })
                 });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                    throw new Error('خطا در به‌روزرسانی قیمت‌ها');
+                }
+                
+                const data = await response.json();
                 if (response.ok) {
                     alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
                 }
@@ -1901,9 +2212,17 @@
 
         deleteEditBtn.addEventListener('click', async function() {
             // حذف یا ادیت - trigger webhook and check response
+            if (!requireAuth()) return;
+            
             try {
                 const token = getToken();
                 const username = getUsername();
+                
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    return;
+                }
+                
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1917,22 +2236,51 @@
                     })
                 });
                 
-                const data = await response.json();
-                const responseText = typeof data === 'string' ? data : (data.response || data.message || JSON.stringify(data));
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                    throw new Error('خطا در ارتباط با سرور');
+                }
                 
-                if (responseText === 'home/delete' || responseText.includes('home/delete')) {
-                    redPage.classList.add('show');
+                const data = await response.json();
+                const nextpage = data.nextpage || data.nextPage || '';
+                
+                if (nextpage === 'admin/delete_edit') {
+                    adminDashboard.classList.remove('show');
+                    deleteEditPage.classList.add('show');
+                    deleteEditPage.style.display = 'block';
+                } else if (nextpage === 'login') {
+                    clearToken();
+                    requireAuth();
+                } else if (nextpage === 'Home') {
+                    adminDashboard.classList.remove('show');
+                    mainHeader.classList.remove('header-admin-mode');
+                    mainContentArea.style.display = 'block';
+                    document.querySelector('.search-bar').style.display = 'flex';
                 }
             } catch (error) {
                 console.error('Delete/Edit error:', error);
+                alert('خطا در ارتباط با سرور');
             }
         });
 
         addBtn.addEventListener('click', async function() {
             // اضافه - trigger webhook and check response
+            if (!requireAuth()) return;
+            
             try {
                 const token = getToken();
                 const username = getUsername();
+                
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    return;
+                }
+                
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1946,20 +2294,44 @@
                     })
                 });
                 
-                const data = await response.json();
-                const responseText = typeof data === 'string' ? data : (data.response || data.message || JSON.stringify(data));
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                    throw new Error('خطا در ارتباط با سرور');
+                }
                 
-                if (responseText === 'home/add' || responseText.includes('home/add')) {
-                    greenPage.classList.add('show');
+                const data = await response.json();
+                const nextpage = data.nextpage || data.nextPage || '';
+                
+                if (nextpage === 'admin/add') {
+                    adminDashboard.classList.remove('show');
+                    addPage.classList.add('show');
+                    addPage.style.display = 'block';
+                    backBtn.style.display = 'flex';
+                } else if (nextpage === 'login') {
+                    clearToken();
+                    requireAuth();
+                } else if (nextpage === 'Home') {
+                    adminDashboard.classList.remove('show');
+                    mainHeader.classList.remove('header-admin-mode');
+                    mainContentArea.style.display = 'block';
+                    document.querySelector('.search-bar').style.display = 'flex';
                 }
             } catch (error) {
                 console.error('Add error:', error);
+                alert('خطا در ارتباط با سرور');
             }
         });
 
         // Support form submission
         supportForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            if (!requireAuth()) return;
             
             const text = document.getElementById('supportText').value.trim();
             const number = document.getElementById('supportNumber').value.trim();
@@ -1975,6 +2347,14 @@
             try {
                 const token = getToken();
                 const username = getUsername();
+                
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    supportSubmitBtn.disabled = false;
+                    supportSubmitBtn.textContent = 'ارسال';
+                    return;
+                }
+                
                 const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1990,12 +2370,21 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                    throw new Error('خطا در ارسال پیام');
+                }
+
+                const data = await response.json();
                 if (response.ok) {
                     alert('پیام شما با موفقیت ارسال شد');
                     supportForm.reset();
                     supportModal.classList.remove('show');
-                } else {
-                    alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
                 }
             } catch (error) {
                 console.error('Support form error:', error);
@@ -2025,6 +2414,126 @@
         closeRedPageBtn.addEventListener('click', function() {
             redPage.classList.remove('show');
         });
+
+        // Image upload preview functionality
+        if (imagePreview && imageInput) {
+            // Click on preview area to trigger file input
+            imagePreview.addEventListener('click', function() {
+                imageInput.click();
+            });
+
+            // Handle file selection
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.innerHTML = `
+                        <div class="image-upload-placeholder">
+                            <span class="upload-icon">📎</span>
+                            <span class="upload-text">بارگذاری تصویر</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Add form submission
+        if (addForm) {
+            addForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!requireAuth()) return;
+                
+                const goldCode = document.getElementById('goldCode').value.trim();
+                const productDescription = document.getElementById('productDescription').value.trim();
+                const imageFile = imageInput ? imageInput.files[0] : null;
+
+                if (!goldCode || !productDescription) {
+                    alert('لطفاً کد طلا و توضیحات محصول را وارد کنید');
+                    return;
+                }
+
+                addSubmitBtn.disabled = true;
+                addSubmitBtn.innerHTML = '<span class="send-icon">⏳</span>';
+
+                try {
+                    const token = getToken();
+                    const username = getUsername();
+                    
+                    if (!token) {
+                        alert('لطفاً ابتدا وارد شوید');
+                        addSubmitBtn.disabled = false;
+                        addSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
+                        return;
+                    }
+                    
+                    // Convert image to base64 if present
+                    let imageBase64 = null;
+                    if (imageFile) {
+                        imageBase64 = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(imageFile);
+                        });
+                    }
+
+                    const response = await fetch(ADMIN_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'add_product',
+                            token: token,
+                            username: username,
+                            goldCode: goldCode,
+                            productDescription: productDescription,
+                            image: imageBase64,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                            clearToken();
+                            requireAuth();
+                            return;
+                        }
+                        throw new Error(errorData.message || 'خطا در ارسال اطلاعات');
+                    }
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert('محصول با موفقیت اضافه شد');
+                        addForm.reset();
+                        if (imagePreview) {
+                            imagePreview.innerHTML = `
+                                <div class="image-upload-placeholder">
+                                    <span class="upload-icon">📎</span>
+                                    <span class="upload-text">بارگذاری تصویر</span>
+                                </div>
+                            `;
+                        }
+                        addPage.classList.remove('show');
+                        addPage.style.display = 'none';
+                        adminDashboard.classList.add('show');
+                    }
+                } catch (error) {
+                    console.error('Add form error:', error);
+                    alert('خطا در ارسال اطلاعات. لطفاً دوباره تلاش کنید.');
+                } finally {
+                    addSubmitBtn.disabled = false;
+                    addSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
+                }
+            });
+        }
     </script>
 </body>
 </html>
