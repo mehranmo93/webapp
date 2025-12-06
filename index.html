@@ -838,8 +838,73 @@
             padding-bottom: 40px;
         }
 
-        #deleteEditPage #deleteEditForm {
+        .delete-edit-bottom-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
             width: 100%;
+        }
+
+        .delete-edit-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .delete-edit-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .delete-edit-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #0088cc;
+            border-radius: 24px;
+            font-size: 14px;
+            direction: rtl;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .delete-edit-input:focus {
+            border-color: #0077b3;
+        }
+
+        .delete-edit-send-btn {
+            width: 44px;
+            height: 44px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .delete-edit-send-btn:hover {
+            background-color: #0077b3;
+        }
+
+        .delete-edit-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .delete-edit-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .admin-form-group {
@@ -1220,15 +1285,15 @@
     <div class="admin-page" id="deleteEditPage" style="display: none;">
         <div class="admin-page-content">
             <button class="admin-page-back-btn" id="deleteEditPageBackBtn">←</button>
-            <form id="deleteEditForm">
-                <div class="admin-form-group">
-                    <label class="admin-form-label" for="deleteEditInput">کد طلا یا توضیحات محصول</label>
-                    <input type="text" class="admin-form-input" id="deleteEditInput" required />
-                </div>
-                <button type="submit" class="admin-send-btn" id="deleteEditSubmitBtn">
-                    <span class="send-icon">↑</span>
-                </button>
-            </form>
+            <div class="delete-edit-bottom-container">
+                <label class="delete-edit-label" for="deleteEditInput">کد طلا یا توضیحات محصول</label>
+                <form id="deleteEditForm" class="delete-edit-form">
+                    <input type="text" class="delete-edit-input" id="deleteEditInput" required />
+                    <button type="submit" class="delete-edit-send-btn" id="deleteEditSubmitBtn">
+                        <span class="send-icon">↑</span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
