@@ -830,6 +830,18 @@
             transform: scale(0.95);
         }
 
+        #deleteEditPage .admin-page-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: calc(100vh - 160px);
+            padding-bottom: 40px;
+        }
+
+        #deleteEditPage #deleteEditForm {
+            width: 100%;
+        }
+
         .admin-form-group {
             margin-bottom: 20px;
         }
@@ -1204,6 +1216,22 @@
         </div>
     </div>
 
+    <!-- Admin Delete/Edit Page -->
+    <div class="admin-page" id="deleteEditPage" style="display: none;">
+        <div class="admin-page-content">
+            <button class="admin-page-back-btn" id="deleteEditPageBackBtn">←</button>
+            <form id="deleteEditForm">
+                <div class="admin-form-group">
+                    <label class="admin-form-label" for="deleteEditInput">کد طلا یا توضیحات محصول</label>
+                    <input type="text" class="admin-form-input" id="deleteEditInput" required />
+                </div>
+                <button type="submit" class="admin-send-btn" id="deleteEditSubmitBtn">
+                    <span class="send-icon">↑</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Admin Add Page -->
     <div class="admin-page" id="addPage" style="display: none;">
         <div class="admin-page-content">
@@ -1422,6 +1450,11 @@
         const imagePreview = document.getElementById('imagePreview');
         const addSubmitBtn = document.getElementById('addSubmitBtn');
         const addPageBackBtn = document.getElementById('addPageBackBtn');
+        const deleteEditPage = document.getElementById('deleteEditPage');
+        const deleteEditForm = document.getElementById('deleteEditForm');
+        const deleteEditInput = document.getElementById('deleteEditInput');
+        const deleteEditSubmitBtn = document.getElementById('deleteEditSubmitBtn');
+        const deleteEditPageBackBtn = document.getElementById('deleteEditPageBackBtn');
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -2019,10 +2052,11 @@
             }
             
             // If on delete/edit page, go back to admin dashboard
-            if (typeof deleteEditPage !== 'undefined' && deleteEditPage && deleteEditPage.style.display === 'block') {
+            if (deleteEditPage && (deleteEditPage.style.display === 'block' || deleteEditPage.classList.contains('show'))) {
                 deleteEditPage.classList.remove('show');
                 deleteEditPage.style.display = 'none';
                 adminDashboard.classList.add('show');
+                backBtn.style.display = 'none';
                 return;
             }
             
@@ -2286,6 +2320,7 @@
                     adminDashboard.classList.remove('show');
                     deleteEditPage.classList.add('show');
                     deleteEditPage.style.display = 'block';
+                    backBtn.style.display = 'flex';
                 } else if (nextpage === 'login') {
                     clearToken();
                     requireAuth();
@@ -2597,6 +2632,84 @@
                 addPage.style.display = 'none';
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
+            });
+        }
+
+        // Delete/Edit page back button handler
+        if (deleteEditPageBackBtn) {
+            deleteEditPageBackBtn.addEventListener('click', function() {
+                deleteEditPage.classList.remove('show');
+                deleteEditPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                backBtn.style.display = 'none';
+            });
+        }
+
+        // Delete/Edit form submission
+        if (deleteEditForm) {
+            deleteEditForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!requireAuth()) return;
+                
+                const inputValue = deleteEditInput.value.trim();
+
+                if (!inputValue) {
+                    alert('لطفاً کد طلا یا توضیحات محصول را وارد کنید');
+                    return;
+                }
+
+                deleteEditSubmitBtn.disabled = true;
+                deleteEditSubmitBtn.innerHTML = '<span class="send-icon">⏳</span>';
+
+                try {
+                    const token = getToken();
+                    const username = getUsername();
+                    
+                    if (!token) {
+                        alert('لطفاً ابتدا وارد شوید');
+                        deleteEditSubmitBtn.disabled = false;
+                        deleteEditSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
+                        return;
+                    }
+                    
+                    const response = await fetch(ADMIN_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'delete_edit_search',
+                            token: token,
+                            username: username,
+                            searchQuery: inputValue,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                            clearToken();
+                            requireAuth();
+                            return;
+                        }
+                        throw new Error(errorData.message || 'خطا در ارسال اطلاعات');
+                    }
+
+                    const data = await response.json();
+                    
+                    // Handle response based on backend response
+                    // User will explain what to show in next comment
+                    console.log('Delete/Edit response:', data);
+                    
+                } catch (error) {
+                    console.error('Delete/Edit form error:', error);
+                    alert('خطا در ارسال اطلاعات. لطفاً دوباره تلاش کنید.');
+                } finally {
+                    deleteEditSubmitBtn.disabled = false;
+                    deleteEditSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
+                }
             });
         }
     </script>
