@@ -1351,6 +1351,7 @@
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
+        const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
         
         // Token and user management
@@ -2356,7 +2357,7 @@
                     return;
                 }
                 
-                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                const response = await fetch(PAGE_NAVIGATION_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2415,7 +2416,7 @@
                     return;
                 }
                 
-                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                const response = await fetch(PAGE_NAVIGATION_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
