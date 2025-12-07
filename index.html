@@ -2562,14 +2562,38 @@
                     addPage.classList.add('show');
                     addPage.style.display = 'block';
                     backBtn.style.display = 'flex';
+                    
+                    // Fill the form with data from response
+                    const goldCodeInput = document.getElementById('goldCode');
+                    const productDescriptionInput = document.getElementById('productDescription');
+                    
+                    if (goldCodeInput && data.code) {
+                        goldCodeInput.value = data.code;
+                    }
+                    if (productDescriptionInput && data.text) {
+                        productDescriptionInput.value = data.text;
+                    }
+                    
+                    // Fill the image if provided
+                    if (data.image || data.image_url || data.url || data.photo) {
+                        const imageUrl = data.image || data.image_url || data.url || data.photo;
+                        if (imagePreview) {
+                            const img = document.createElement('img');
+                            img.src = imageUrl;
+                            img.alt = 'Preview';
+                            imagePreview.innerHTML = '';
+                            imagePreview.appendChild(img);
+                        }
+                    }
                 } else if (nextpage === 'login') {
                     clearToken();
                     requireAuth();
-                } else if (nextpage === 'Home') {
+                } else if (nextpage === 'home' || nextpage === 'Home') {
                     adminDashboard.classList.remove('show');
                     mainHeader.classList.remove('header-admin-mode');
                     mainContentArea.style.display = 'block';
                     document.querySelector('.search-bar').style.display = 'flex';
+                    backBtn.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Add error:', error);
@@ -2901,9 +2925,7 @@
                 caption.textContent = imageData.caption || imageData.description || imageData.text || imageData.info || '';
                 
                 imageItem.appendChild(img);
-                if (caption.textContent) {
-                    imageItem.appendChild(caption);
-                }
+                imageItem.appendChild(caption);
                 
                 imageItem.addEventListener('click', function() {
                     // Remove previous selection
@@ -3117,14 +3139,58 @@
                     }
 
                     const data = await response.json();
-                    alert('عملیات ادیت با موفقیت انجام شد');
+                    const nextpage = data.nextpage || data.nextPage || '';
                     
-                    // Clear results and reset form
-                    deleteEditResults.style.display = 'none';
-                    deleteEditResults.innerHTML = '';
-                    deleteEditActions.style.display = 'none';
-                    deleteEditInput.value = '';
-                    selectedImageData = null;
+                    if (nextpage === 'admin/add') {
+                        // Navigate to add page and fill the form
+                        deleteEditPage.classList.remove('show');
+                        deleteEditPage.style.display = 'none';
+                        addPage.classList.add('show');
+                        addPage.style.display = 'block';
+                        backBtn.style.display = 'flex';
+                        
+                        // Fill the form with data from response
+                        const goldCodeInput = document.getElementById('goldCode');
+                        const productDescriptionInput = document.getElementById('productDescription');
+                        
+                        if (goldCodeInput && data.code) {
+                            goldCodeInput.value = data.code;
+                        }
+                        if (productDescriptionInput && data.text) {
+                            productDescriptionInput.value = data.text;
+                        }
+                        
+                        // Fill the image if provided
+                        if (data.image || data.image_url || data.url || data.photo) {
+                            const imageUrl = data.image || data.image_url || data.url || data.photo;
+                            if (imagePreview) {
+                                const img = document.createElement('img');
+                                img.src = imageUrl;
+                                img.alt = 'Preview';
+                                imagePreview.innerHTML = '';
+                                imagePreview.appendChild(img);
+                            }
+                        }
+                    } else if (nextpage === 'home' || nextpage === 'Home') {
+                        // Go back to home
+                        deleteEditPage.classList.remove('show');
+                        deleteEditPage.style.display = 'none';
+                        adminDashboard.classList.remove('show');
+                        mainHeader.classList.remove('header-admin-mode');
+                        mainContentArea.style.display = 'block';
+                        document.querySelector('.search-bar').style.display = 'flex';
+                        backBtn.style.display = 'none';
+                    } else {
+                        // Default: show success message and clear form
+                        alert('عملیات ادیت با موفقیت انجام شد');
+                        
+                        // Clear results and reset form
+                        deleteEditResults.style.display = 'none';
+                        deleteEditResults.innerHTML = '';
+                        deleteEditActions.style.display = 'none';
+                        deleteEditInput.value = '';
+                        selectedImageData = null;
+                    }
                     
                 } catch (error) {
                     console.error('Edit action error:', error);
