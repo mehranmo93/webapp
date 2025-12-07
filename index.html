@@ -833,7 +833,7 @@
         #deleteEditPage .admin-page-content {
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: space-between;
             min-height: calc(100vh - 160px);
             padding-bottom: 40px;
         }
@@ -906,6 +906,112 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .delete-edit-results {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .delete-edit-image-item {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .delete-edit-image-item:hover {
+            border-color: #0088cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .delete-edit-image-item.selected {
+            border-color: #0088cc;
+            background-color: #f0f8ff;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.2);
+        }
+
+        .delete-edit-image-item img {
+            width: 100%;
+            border-radius: 8px;
+            object-fit: cover;
+            max-height: 300px;
+            margin-bottom: 8px;
+        }
+
+        .delete-edit-image-caption {
+            font-size: 14px;
+            color: #333;
+            text-align: right;
+            padding: 8px 0;
+            line-height: 1.5;
+        }
+
+        .delete-edit-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .delete-edit-action-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .delete-edit-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .delete-edit-action-btn-delete {
+            background-color: #ff3b30;
+            color: white;
+        }
+
+        .delete-edit-action-btn-delete:hover:not(:disabled) {
+            background-color: #e6342a;
+            transform: scale(1.02);
+        }
+
+        .delete-edit-action-btn-edit {
+            background-color: #34c759;
+            color: white;
+        }
+
+        .delete-edit-action-btn-edit:hover:not(:disabled) {
+            background-color: #30b050;
+            transform: scale(1.02);
+        }
+
+        .delete-edit-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .delete-edit-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 14px;
         }
 
         .admin-form-group {
@@ -1286,6 +1392,7 @@
     <div class="admin-page" id="deleteEditPage" style="display: none;">
         <div class="admin-page-content">
             <button class="admin-page-back-btn" id="deleteEditPageBackBtn">←</button>
+            <div class="delete-edit-results" id="deleteEditResults" style="display: none;"></div>
             <div class="delete-edit-bottom-container">
                 <label class="delete-edit-label" for="deleteEditInput">کد طلا یا توضیحات محصول</label>
                 <form id="deleteEditForm" class="delete-edit-form">
@@ -1294,6 +1401,10 @@
                         <span class="send-icon">↑</span>
                     </button>
                 </form>
+                <div class="delete-edit-actions" id="deleteEditActions" style="display: none;">
+                    <button class="delete-edit-action-btn delete-edit-action-btn-delete" id="deleteActionBtn">حذف</button>
+                    <button class="delete-edit-action-btn delete-edit-action-btn-edit" id="editActionBtn">ادیت</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1522,6 +1633,10 @@
         const deleteEditInput = document.getElementById('deleteEditInput');
         const deleteEditSubmitBtn = document.getElementById('deleteEditSubmitBtn');
         const deleteEditPageBackBtn = document.getElementById('deleteEditPageBackBtn');
+        const deleteEditResults = document.getElementById('deleteEditResults');
+        const deleteEditActions = document.getElementById('deleteEditActions');
+        const deleteActionBtn = document.getElementById('deleteActionBtn');
+        const editActionBtn = document.getElementById('editActionBtn');
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -2705,6 +2820,19 @@
         // Delete/Edit page back button handler
         if (deleteEditPageBackBtn) {
             deleteEditPageBackBtn.addEventListener('click', function() {
+                // Reset state
+                if (deleteEditResults) {
+                    deleteEditResults.style.display = 'none';
+                    deleteEditResults.innerHTML = '';
+                }
+                if (deleteEditActions) {
+                    deleteEditActions.style.display = 'none';
+                }
+                if (deleteEditInput) {
+                    deleteEditInput.value = '';
+                }
+                selectedImageData = null;
+                
                 deleteEditPage.classList.remove('show');
                 deleteEditPage.style.display = 'none';
                 adminDashboard.classList.add('show');
@@ -2713,6 +2841,98 @@
         }
 
         // Delete/Edit form submission
+        let selectedImageData = null;
+
+        function displayDeleteEditResults(data) {
+            deleteEditResults.innerHTML = '';
+            deleteEditResults.style.display = 'block';
+            selectedImageData = null;
+            deleteEditActions.style.display = 'none';
+            deleteActionBtn.disabled = true;
+            editActionBtn.disabled = true;
+
+            // Parse response - handle different response formats
+            let images = [];
+            
+            if (Array.isArray(data)) {
+                images = data;
+            } else if (data.images && Array.isArray(data.images)) {
+                images = data.images;
+            } else if (data.items && Array.isArray(data.items)) {
+                images = data.items;
+            } else if (data.results && Array.isArray(data.results)) {
+                images = data.results;
+            } else if (data.url || data.image) {
+                // Single image
+                images = [{
+                    url: data.url || data.image || data.image_url || data.photo,
+                    caption: data.caption || data.description || data.text || ''
+                }];
+            } else if (typeof data === 'object') {
+                // Try to extract image from object
+                const url = data.url || data.image || data.image_url || data.photo;
+                if (url) {
+                    images = [{
+                        url: url,
+                        caption: data.caption || data.description || data.text || data.info || ''
+                    }];
+                }
+            }
+
+            if (images.length === 0) {
+                deleteEditResults.innerHTML = '<div class="delete-edit-empty">نتیجه‌ای یافت نشد</div>';
+                return;
+            }
+
+            images.forEach((imageData, index) => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'delete-edit-image-item';
+                imageItem.dataset.index = index;
+                
+                const img = document.createElement('img');
+                img.src = imageData.url || imageData.image || imageData.image_url || imageData.photo;
+                img.alt = imageData.caption || imageData.description || imageData.text || '';
+                img.onerror = function() {
+                    this.style.display = 'none';
+                };
+                
+                const caption = document.createElement('div');
+                caption.className = 'delete-edit-image-caption';
+                caption.textContent = imageData.caption || imageData.description || imageData.text || imageData.info || '';
+                
+                imageItem.appendChild(img);
+                if (caption.textContent) {
+                    imageItem.appendChild(caption);
+                }
+                
+                imageItem.addEventListener('click', function() {
+                    // Remove previous selection
+                    document.querySelectorAll('.delete-edit-image-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    
+                    // Add selection to clicked item
+                    this.classList.add('selected');
+                    selectedImageData = {
+                        url: imageData.url || imageData.image || imageData.image_url || imageData.photo,
+                        caption: imageData.caption || imageData.description || imageData.text || imageData.info || '',
+                        index: index,
+                        originalData: imageData
+                    };
+                    
+                    // Enable action buttons
+                    deleteActionBtn.disabled = false;
+                    editActionBtn.disabled = false;
+                    deleteEditActions.style.display = 'flex';
+                });
+                
+                deleteEditResults.appendChild(imageItem);
+            });
+
+            // Scroll to results
+            deleteEditResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         if (deleteEditForm) {
             deleteEditForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -2728,6 +2948,9 @@
 
                 deleteEditSubmitBtn.disabled = true;
                 deleteEditSubmitBtn.innerHTML = '<span class="send-icon">⏳</span>';
+                deleteEditResults.style.display = 'block';
+                deleteEditResults.innerHTML = '<div class="delete-edit-loading">در حال جستجو...</div>';
+                deleteEditActions.style.display = 'none';
 
                 try {
                     const token = getToken();
@@ -2765,17 +2988,151 @@
                     }
 
                     const data = await response.json();
-                    
-                    // Handle response based on backend response
-                    // User will explain what to show in next comment
-                    console.log('Delete/Edit response:', data);
+                    displayDeleteEditResults(data);
                     
                 } catch (error) {
                     console.error('Delete/Edit form error:', error);
+                    deleteEditResults.innerHTML = '<div class="delete-edit-empty" style="color: #ff3b30;">خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.</div>';
                     alert('خطا در ارسال اطلاعات. لطفاً دوباره تلاش کنید.');
                 } finally {
                     deleteEditSubmitBtn.disabled = false;
                     deleteEditSubmitBtn.innerHTML = '<span class="send-icon">↑</span>';
+                }
+            });
+        }
+
+        // Delete action button
+        if (deleteActionBtn) {
+            deleteActionBtn.addEventListener('click', async function() {
+                if (!selectedImageData || !requireAuth()) {
+                    alert('لطفاً ابتدا یک تصویر را انتخاب کنید');
+                    return;
+                }
+
+                deleteActionBtn.disabled = true;
+                editActionBtn.disabled = true;
+                deleteActionBtn.textContent = 'در حال حذف...';
+
+                try {
+                    const token = getToken();
+                    const username = getUsername();
+                    
+                    if (!token) {
+                        alert('لطفاً ابتدا وارد شوید');
+                        return;
+                    }
+                    
+                    const response = await fetch(ADMIN_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'delete',
+                            token: token,
+                            username: username,
+                            imageUrl: selectedImageData.url,
+                            caption: selectedImageData.caption,
+                            imageData: selectedImageData.originalData,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                            clearToken();
+                            requireAuth();
+                            return;
+                        }
+                        throw new Error(errorData.message || 'خطا در حذف');
+                    }
+
+                    const data = await response.json();
+                    alert('عملیات حذف با موفقیت انجام شد');
+                    
+                    // Clear results and reset form
+                    deleteEditResults.style.display = 'none';
+                    deleteEditResults.innerHTML = '';
+                    deleteEditActions.style.display = 'none';
+                    deleteEditInput.value = '';
+                    selectedImageData = null;
+                    
+                } catch (error) {
+                    console.error('Delete action error:', error);
+                    alert('خطا در حذف. لطفاً دوباره تلاش کنید.');
+                } finally {
+                    deleteActionBtn.disabled = false;
+                    editActionBtn.disabled = false;
+                    deleteActionBtn.textContent = 'حذف';
+                }
+            });
+        }
+
+        // Edit action button
+        if (editActionBtn) {
+            editActionBtn.addEventListener('click', async function() {
+                if (!selectedImageData || !requireAuth()) {
+                    alert('لطفاً ابتدا یک تصویر را انتخاب کنید');
+                    return;
+                }
+
+                editActionBtn.disabled = true;
+                deleteActionBtn.disabled = true;
+                editActionBtn.textContent = 'در حال ادیت...';
+
+                try {
+                    const token = getToken();
+                    const username = getUsername();
+                    
+                    if (!token) {
+                        alert('لطفاً ابتدا وارد شوید');
+                        return;
+                    }
+                    
+                    const response = await fetch(ADMIN_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'edit',
+                            token: token,
+                            username: username,
+                            imageUrl: selectedImageData.url,
+                            caption: selectedImageData.caption,
+                            imageData: selectedImageData.originalData,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                            clearToken();
+                            requireAuth();
+                            return;
+                        }
+                        throw new Error(errorData.message || 'خطا در ادیت');
+                    }
+
+                    const data = await response.json();
+                    alert('عملیات ادیت با موفقیت انجام شد');
+                    
+                    // Clear results and reset form
+                    deleteEditResults.style.display = 'none';
+                    deleteEditResults.innerHTML = '';
+                    deleteEditActions.style.display = 'none';
+                    deleteEditInput.value = '';
+                    selectedImageData = null;
+                    
+                } catch (error) {
+                    console.error('Edit action error:', error);
+                    alert('خطا در ادیت. لطفاً دوباره تلاش کنید.');
+                } finally {
+                    editActionBtn.disabled = false;
+                    deleteActionBtn.disabled = false;
+                    editActionBtn.textContent = 'ادیت';
                 }
             });
         }
