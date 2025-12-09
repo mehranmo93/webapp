@@ -1256,6 +1256,9 @@
         <div class="accordion-item" id="loginMenuItem">
             <div class="accordion-item-content">ورود</div>
         </div>
+        <div class="accordion-item" id="goldPriceMenuItem">
+            <div class="accordion-item-content">قیمت روز طلا</div>
+        </div>
     </div>
 
     <!-- Content Area -->
@@ -1591,6 +1594,7 @@
         const accordionMenu = document.getElementById('accordionMenu');
         const contactMenuItem = document.getElementById('contactMenuItem');
         const loginMenuItem = document.getElementById('loginMenuItem');
+        const goldPriceMenuItem = document.getElementById('goldPriceMenuItem');
         
         // Modal Elements
         const contactModal = document.getElementById('contactModal');
@@ -2121,6 +2125,36 @@
             loginModal.classList.add('show');
         });
 
+        goldPriceMenuItem.addEventListener('click', async function() {
+            accordionMenu.classList.remove('show');
+            goldPriceModal.classList.add('show');
+            goldPriceContainer.innerHTML = '<div class="loading">در حال بارگذاری...</div>';
+            
+            try {
+                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_gold_prices',
+                        username: 'users',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch gold prices');
+                }
+                
+                const data = await response.json();
+                displayGoldPrices(data);
+            } catch (error) {
+                console.error('Gold price error:', error);
+                goldPriceContainer.innerHTML = '<div class="loading" style="color: #ff3b30;">خطا در دریافت قیمت‌ها. لطفاً دوباره تلاش کنید.</div>';
+            }
+        });
+
         // Contact form submission
         contactForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -2451,7 +2485,25 @@
                 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
+                    // Check nextPage value from response
+                    if (data.nextPage) {
+                        if (data.nextPage === 'login') {
+                            // Redirect to login page
+                            clearToken();
+                            mainHeader.classList.remove('header-admin-mode');
+                            adminDashboard.classList.remove('show');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                            loginModal.classList.add('show');
+                            alert('لطفاً دوباره وارد شوید');
+                        } else if (data.nextPage === 'home') {
+                            // Stay on home page (already there)
+                            alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
+                        }
+                    } else {
+                        // No nextPage specified, show success message
+                        alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
+                    }
                 }
             } catch (error) {
                 console.error('Update prices error:', error);
