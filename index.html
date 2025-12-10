@@ -1530,6 +1530,43 @@
         </div>
     </div>
 
+    <!-- Store Setup Modal -->
+    <div class="modal" id="storeSetupModal">
+        <div class="modal-content">
+            <div class="modal-header">تنظیم اطلاعات فروشگاه</div>
+            <div class="modal-body">
+                <form id="storeSetupForm">
+                    <div class="form-group">
+                        <label class="form-label" for="storeSetupUsername">نام کاربری</label>
+                        <input type="text" class="form-input" id="storeSetupUsername" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="storeSetupPassword">انتخاب رمز عبور</label>
+                        <input type="password" class="form-input" id="storeSetupPassword" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">اطلاعات فروشگاه شامل نام، تلفن تماس و آدرس</label>
+                        <input type="text" class="form-input" id="storeSetupName" placeholder="نام فروشگاه" required />
+                        <input type="tel" class="form-input" id="storeSetupPhone" placeholder="تلفن تماس" required style="margin-top: 12px;" />
+                        <input type="text" class="form-input" id="storeSetupAddress" placeholder="آدرس" required style="margin-top: 12px;" />
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="form-submit-btn" id="storeSetupLocationBtn" style="background: var(--black-primary); color: var(--gold-primary); border: 2px solid var(--gold-primary); margin-top: 12px;">
+                            ارسال موقعیت مکانی
+                        </button>
+                        <div id="storeSetupLocationDisplay" style="margin-top: 12px; padding: 12px; background: var(--gray-light); border-radius: 8px; display: none;">
+                            <span id="storeSetupLocationText">موقعیت دریافت نشده</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="form-submit-btn" id="storeSetupSubmitBtn">ارسال</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closeStoreSetupModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Gold Price Modal -->
     <div class="modal" id="goldPriceModal">
         <div class="modal-content">
@@ -1777,17 +1814,24 @@
         const contactModal = document.getElementById('contactModal');
         const loginModal = document.getElementById('loginModal');
         const passwordResetModal = document.getElementById('passwordResetModal');
+        const storeSetupModal = document.getElementById('storeSetupModal');
         const goldPriceModal = document.getElementById('goldPriceModal');
         const contactForm = document.getElementById('contactForm');
         const loginForm = document.getElementById('loginForm');
         const passwordResetForm = document.getElementById('passwordResetForm');
+        const storeSetupForm = document.getElementById('storeSetupForm');
         const contactSubmitBtn = document.getElementById('contactSubmitBtn');
         const loginSubmitBtn = document.getElementById('loginSubmitBtn');
         const passwordResetSubmitBtn = document.getElementById('passwordResetSubmitBtn');
+        const storeSetupSubmitBtn = document.getElementById('storeSetupSubmitBtn');
+        const storeSetupLocationBtn = document.getElementById('storeSetupLocationBtn');
+        const storeSetupLocationDisplay = document.getElementById('storeSetupLocationDisplay');
+        const storeSetupLocationText = document.getElementById('storeSetupLocationText');
         const passwordResetBtn = document.getElementById('passwordResetBtn');
         const closeContactModalBtn = document.getElementById('closeContactModalBtn');
         const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
         const closePasswordResetModalBtn = document.getElementById('closePasswordResetModalBtn');
+        const closeStoreSetupModalBtn = document.getElementById('closeStoreSetupModalBtn');
         const closeGoldPriceModalBtn = document.getElementById('closeGoldPriceModalBtn');
         const goldPriceContainer = document.getElementById('goldPriceContainer');
         
@@ -2565,6 +2609,10 @@
             passwordResetModal.classList.remove('show');
         });
 
+        closeStoreSetupModalBtn.addEventListener('click', function() {
+            storeSetupModal.classList.remove('show');
+        });
+
         // Password reset button click
         passwordResetBtn.addEventListener('click', function() {
             loginModal.classList.remove('show');
@@ -2604,9 +2652,20 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('اطلاعات با موفقیت ارسال شد');
-                    passwordResetForm.reset();
-                    passwordResetModal.classList.remove('show');
+                    // Check if response contains "login/setting_pass" to redirect to store setup
+                    const responseText = JSON.stringify(data).toLowerCase();
+                    const nextPage = data.nextPage || data.nextpage || '';
+                    
+                    if (nextPage === 'login/setting_pass' || responseText.includes('login/setting_pass') || responseText.includes('setting_pass')) {
+                        passwordResetModal.classList.remove('show');
+                        storeSetupModal.classList.add('show');
+                        // Pre-fill phone if available
+                        document.getElementById('storeSetupPhone').value = phone;
+                    } else {
+                        alert('اطلاعات با موفقیت ارسال شد');
+                        passwordResetForm.reset();
+                        passwordResetModal.classList.remove('show');
+                    }
                 }
             } catch (error) {
                 console.error('Password reset error:', error);
@@ -2614,6 +2673,94 @@
             } finally {
                 passwordResetSubmitBtn.disabled = false;
                 passwordResetSubmitBtn.textContent = 'ارسال';
+            }
+        });
+
+        // Store location data
+        let storeLocationData = null;
+
+        // Store setup location button
+        storeSetupLocationBtn.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                storeSetupLocationBtn.disabled = true;
+                storeSetupLocationBtn.textContent = 'در حال دریافت موقعیت...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        storeLocationData = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        storeSetupLocationText.textContent = `موقعیت: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+                        storeSetupLocationDisplay.style.display = 'block';
+                        storeSetupLocationBtn.disabled = false;
+                        storeSetupLocationBtn.textContent = 'ارسال موقعیت مکانی';
+                    },
+                    function(error) {
+                        alert('خطا در دریافت موقعیت. لطفاً مجدداً تلاش کنید.');
+                        storeSetupLocationBtn.disabled = false;
+                        storeSetupLocationBtn.textContent = 'ارسال موقعیت مکانی';
+                    }
+                );
+            } else {
+                alert('مرورگر شما از دریافت موقعیت پشتیبانی نمی‌کند');
+            }
+        });
+
+        // Store setup form submission
+        storeSetupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('storeSetupUsername').value.trim();
+            const password = document.getElementById('storeSetupPassword').value.trim();
+            const storeName = document.getElementById('storeSetupName').value.trim();
+            const storePhone = document.getElementById('storeSetupPhone').value.trim();
+            const storeAddress = document.getElementById('storeSetupAddress').value.trim();
+
+            if (!username || !password || !storeName || !storePhone || !storeAddress) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            storeSetupSubmitBtn.disabled = true;
+            storeSetupSubmitBtn.textContent = 'در حال ارسال...';
+
+            try {
+                const response = await fetch(LOGIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'store_setup',
+                        username: username,
+                        password: password,
+                        storeName: storeName,
+                        storePhone: storePhone,
+                        storeAddress: storeAddress,
+                        location: storeLocationData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('خطا در ارسال اطلاعات');
+                }
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('اطلاعات با موفقیت ارسال شد');
+                    storeSetupForm.reset();
+                    storeSetupLocationDisplay.style.display = 'none';
+                    storeLocationData = null;
+                    storeSetupModal.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Store setup error:', error);
+                alert('خطا در ارسال اطلاعات. لطفاً دوباره تلاش کنید.');
+            } finally {
+                storeSetupSubmitBtn.disabled = false;
+                storeSetupSubmitBtn.textContent = 'ارسال';
             }
         });
 
@@ -2633,6 +2780,12 @@
         passwordResetModal.addEventListener('click', function(e) {
             if (e.target === passwordResetModal) {
                 passwordResetModal.classList.remove('show');
+            }
+        });
+
+        storeSetupModal.addEventListener('click', function(e) {
+            if (e.target === storeSetupModal) {
+                storeSetupModal.classList.remove('show');
             }
         });
 
