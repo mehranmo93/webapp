@@ -1348,7 +1348,27 @@
                 </form>
             </div>
             <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="passwordResetBtn">تنظیم یا تغییر رمز عبور</button>
                 <button class="modal-btn modal-btn-secondary" id="closeLoginModalBtn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div class="modal" id="passwordResetModal">
+        <div class="modal-content">
+            <div class="modal-header">تنظیم یا تغییر رمز عبور</div>
+            <div class="modal-body">
+                <form id="passwordResetForm">
+                    <div class="form-group">
+                        <label class="form-label" for="passwordResetPhone">شماره تماس</label>
+                        <input type="tel" class="form-input" id="passwordResetPhone" required />
+                    </div>
+                    <button type="submit" class="form-submit-btn" id="passwordResetSubmitBtn">ارسال</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="closePasswordResetModalBtn">بستن</button>
             </div>
         </div>
     </div>
@@ -1599,13 +1619,18 @@
         // Modal Elements
         const contactModal = document.getElementById('contactModal');
         const loginModal = document.getElementById('loginModal');
+        const passwordResetModal = document.getElementById('passwordResetModal');
         const goldPriceModal = document.getElementById('goldPriceModal');
         const contactForm = document.getElementById('contactForm');
         const loginForm = document.getElementById('loginForm');
+        const passwordResetForm = document.getElementById('passwordResetForm');
         const contactSubmitBtn = document.getElementById('contactSubmitBtn');
         const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const passwordResetSubmitBtn = document.getElementById('passwordResetSubmitBtn');
+        const passwordResetBtn = document.getElementById('passwordResetBtn');
         const closeContactModalBtn = document.getElementById('closeContactModalBtn');
         const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
+        const closePasswordResetModalBtn = document.getElementById('closePasswordResetModalBtn');
         const closeGoldPriceModalBtn = document.getElementById('closeGoldPriceModalBtn');
         const goldPriceContainer = document.getElementById('goldPriceContainer');
         
@@ -2379,6 +2404,62 @@
             goldPriceModal.classList.remove('show');
         });
 
+        closePasswordResetModalBtn.addEventListener('click', function() {
+            passwordResetModal.classList.remove('show');
+        });
+
+        // Password reset button click
+        passwordResetBtn.addEventListener('click', function() {
+            loginModal.classList.remove('show');
+            passwordResetModal.classList.add('show');
+        });
+
+        // Password reset form submission
+        passwordResetForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('passwordResetPhone').value.trim();
+
+            if (!phone) {
+                alert('لطفاً شماره تماس را وارد کنید');
+                return;
+            }
+
+            passwordResetSubmitBtn.disabled = true;
+            passwordResetSubmitBtn.textContent = 'در حال ارسال...';
+
+            try {
+                const response = await fetch(LOGIN_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'reset_password',
+                        phone: phone,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('خطا در ارسال اطلاعات');
+                }
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('اطلاعات با موفقیت ارسال شد');
+                    passwordResetForm.reset();
+                    passwordResetModal.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Password reset error:', error);
+                alert('خطا در ارسال اطلاعات. لطفاً دوباره تلاش کنید.');
+            } finally {
+                passwordResetSubmitBtn.disabled = false;
+                passwordResetSubmitBtn.textContent = 'ارسال';
+            }
+        });
+
         // Close modals when clicking outside
         contactModal.addEventListener('click', function(e) {
             if (e.target === contactModal) {
@@ -2389,6 +2470,12 @@
         loginModal.addEventListener('click', function(e) {
             if (e.target === loginModal) {
                 loginModal.classList.remove('show');
+            }
+        });
+
+        passwordResetModal.addEventListener('click', function(e) {
+            if (e.target === passwordResetModal) {
+                passwordResetModal.classList.remove('show');
             }
         });
 
