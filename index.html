@@ -1436,7 +1436,7 @@
         <div class="admin-buttons-bottom">
             <button class="admin-btn admin-btn-update" id="updatePricesBtn">آپدیت قیمت ها</button>
             <div class="admin-buttons-row">
-                <button class="admin-btn admin-btn-add" id="addBtn">اضافه</button>
+                <button class="admin-btn admin-btn-add" id="addBtn">افزودن</button>
                 <button class="admin-btn admin-btn-delete" id="deleteEditBtn">حذف یا ادیت</button>
             </div>
         </div>
@@ -1704,12 +1704,12 @@
     </div>
 
     <script>
-        const WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
-        const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc5d867f-e95f-412f-921f-1819407f27fa';
-        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
-        const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
-        const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/91991a96-0cdd-4dbc-860b-3dc9729a1823';
+        const WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
+        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
+        const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
+        const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
         
         // Token and user management
@@ -2402,7 +2402,7 @@
             goldPriceContainer.innerHTML = '<div class="loading">در حال بارگذاری...</div>';
             
             try {
-                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/5906c811-a199-49c6-bd96-1f2e1cdf6e53', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3115,7 +3115,7 @@
                 clearEmptyState();
                 const loadingMessage = appendMessage('bot', 'در حال بارگذاری محصولات...', { isPending: true });
                 
-                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
+                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3212,7 +3212,7 @@
                     return;
                 }
                 
-                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/5906c811-a199-49c6-bd96-1f2e1cdf6e53', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3323,7 +3323,7 @@
         });
 
         addBtn.addEventListener('click', async function() {
-            // اضافه - trigger webhook and check response
+            // افزودن - trigger webhook and check response
             if (!requireAuth()) return;
             
             try {
@@ -3589,7 +3589,12 @@
 
                     const data = await response.json();
                     if (response.ok) {
-                        alert('محصول با موفقیت اضافه شد');
+                        // Show message from backend if available
+                        const message = data.message || '';
+                        if (message) {
+                            alert(message);
+                        }
+                        
                         addForm.reset();
                         if (imagePreview) {
                             imagePreview.innerHTML = `
@@ -3611,7 +3616,7 @@
                             requireAuth();
                             addPage.classList.remove('show');
                             addPage.style.display = 'none';
-                        } else if (nextpage === 'Home') {
+                        } else if (nextpage === 'Home' || nextpage === 'home') {
                             addPage.classList.remove('show');
                             addPage.style.display = 'none';
                             adminDashboard.classList.remove('show');
@@ -3814,7 +3819,41 @@
                     }
 
                     const data = await response.json();
-                    displayDeleteEditResults(data);
+                    
+                    // Show message from backend if available
+                    const message = data.message || '';
+                    if (message) {
+                        alert(message);
+                    }
+                    
+                    // Check for nextpage in response
+                    const nextpage = data.nextpage || data.nextPage || '';
+                    if (nextpage) {
+                        if (nextpage === 'login') {
+                            clearToken();
+                            requireAuth();
+                            deleteEditPage.classList.remove('show');
+                            deleteEditPage.style.display = 'none';
+                        } else if (nextpage === 'Home' || nextpage === 'home') {
+                            deleteEditPage.classList.remove('show');
+                            deleteEditPage.style.display = 'none';
+                            adminDashboard.classList.remove('show');
+                            mainHeader.classList.remove('header-admin-mode');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                        } else if (nextpage === 'admin/delete_edit_search') {
+                            // Stay on delete/edit page - display results
+                            displayDeleteEditResults(data);
+                        } else {
+                            // Default: go back to admin dashboard
+                            deleteEditPage.classList.remove('show');
+                            deleteEditPage.style.display = 'none';
+                            adminDashboard.classList.add('show');
+                        }
+                    } else {
+                        // No nextPage - display results normally
+                        displayDeleteEditResults(data);
+                    }
                     
                 } catch (error) {
                     console.error('Delete/Edit form error:', error);
