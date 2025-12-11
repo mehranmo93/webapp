@@ -3080,7 +3080,7 @@
         });
 
         headerProductsBtn.addEventListener('click', async function() {
-            // 10 محصول آخر - trigger webhook
+            // 10 محصول آخر - trigger webhook and display images
             if (!requireAuth()) return;
             
             try {
@@ -3092,7 +3092,11 @@
                     return;
                 }
                 
-                const response = await fetch(ADMIN_WEBHOOK_URL, {
+                // Show loading state
+                clearEmptyState();
+                const loadingMessage = appendMessage('bot', 'در حال بارگذاری محصولات...', { isPending: true });
+                
+                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3105,21 +3109,74 @@
                     })
                 });
                 
+                // Remove loading message
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                }
+                
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    if (errorData.message && errorData.message.includes('token') || errorData.message && errorData.message.includes('unauthorized')) {
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
                         clearToken();
                         requireAuth();
                         return;
                     }
+                    throw new Error('خطا در دریافت اطلاعات');
                 }
                 
                 const data = await response.json();
-                // Handle response if needed
-                console.log('Last products response:', data);
+                
+                // Display images with captions
+                if (data && Array.isArray(data) && data.length > 0) {
+                    // If response is an array of images
+                    data.forEach(item => {
+                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
+                        const caption = item.caption || item.title || item.name || item.description || '';
+                        
+                        if (imageUrl) {
+                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
+                            appendMessage('bot', imageContent);
+                        }
+                    });
+                } else if (data.items && Array.isArray(data.items)) {
+                    // If response has items array
+                    data.items.forEach(item => {
+                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
+                        const caption = item.caption || item.title || item.name || item.description || '';
+                        
+                        if (imageUrl) {
+                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
+                            appendMessage('bot', imageContent);
+                        }
+                    });
+                } else if (data.images && Array.isArray(data.images)) {
+                    // If response has images array
+                    data.images.forEach(item => {
+                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
+                        const caption = item.caption || item.title || item.name || item.description || '';
+                        
+                        if (imageUrl) {
+                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
+                            appendMessage('bot', imageContent);
+                        }
+                    });
+                } else if (data.url || data.image || data.image_url || data.photo) {
+                    // Single image response
+                    const imageUrl = data.url || data.image || data.image_url || data.photo;
+                    const caption = data.caption || data.title || data.name || data.description || '';
+                    const imageContent = createImageContent({ url: imageUrl, caption: caption });
+                    appendMessage('bot', imageContent);
+                } else {
+                    // No images found
+                    appendMessage('bot', 'محصولی یافت نشد.');
+                }
+                
+                // Ensure main content area is visible
+                mainContentArea.style.display = 'block';
+                
             } catch (error) {
                 console.error('Last products error:', error);
-                alert('خطا در دریافت اطلاعات');
+                appendMessage('bot', 'خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.');
             }
         });
 
