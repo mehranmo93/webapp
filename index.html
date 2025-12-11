@@ -2248,16 +2248,17 @@
             searchInput.value = '';
 
             appendMessage('user', query);
-            const botPlaceholder = appendMessage('bot', 'در حال دریافت پاسخ...', { isPending: true });
 
-            setSearchState(true);
-
-            // Check if store is selected
+            // Check if store is selected BEFORE showing pending message
             if (!selectedStore || selectedStore === '') {
                 appendMessage('bot', 'ابتدا مغازه خود را انتخاب کنید.');
                 setSearchState(false);
                 return;
             }
+
+            // Store is selected, show pending message and proceed
+            const botPlaceholder = appendMessage('bot', 'در حال دریافت پاسخ...', { isPending: true });
+            setSearchState(true);
 
             const payload = {
                 store: selectedStore,
