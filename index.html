@@ -2969,11 +2969,70 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('اطلاعات با موفقیت ارسال شد');
-                    storeSetupForm.reset();
-                    storeSetupLocationDisplay.style.display = 'none';
-                    storeLocationData = null;
-                    storeSetupModal.classList.remove('show');
+                    // Get nextPage value first (before closing modal)
+                    const nextPage = data.nextPage || data.nextpage || '';
+                    // Also check if response text contains login/setting_pass
+                    const responseText = JSON.stringify(data).toLowerCase();
+                    const hasSettingPass = nextPage === 'login/setting_pass' || nextPage === 'login/setting_pass/' || 
+                                          responseText.includes('login/setting_pass') || responseText.includes('setting_pass');
+                    
+                    // Show message from backend if available
+                    const message = data.message || 'اطلاعات با موفقیت ارسال شد';
+                    alert(message);
+                    
+                    // Handle nextPage redirect
+                    if (nextPage || hasSettingPass) {
+                        if (hasSettingPass) {
+                            // Stay on login/setting_pass page (store setup modal)
+                            // Keep the modal open, reset form for new entry
+                            storeSetupForm.reset();
+                            storeSetupLocationDisplay.style.display = 'none';
+                            storeLocationData = null;
+                            storeSetupModal.classList.add('show'); // Ensure it's visible
+                        } else if (nextPage === 'login' || nextPage === 'login/') {
+                            // Redirect to login page
+                            storeSetupForm.reset();
+                            storeSetupLocationDisplay.style.display = 'none';
+                            storeLocationData = null;
+                            storeSetupModal.classList.remove('show');
+                            mainHeader.classList.remove('header-admin-mode');
+                            adminDashboard.classList.remove('show');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                            loginModal.classList.add('show');
+                        } else if (nextPage === 'home' || nextPage === 'home/') {
+                            // Redirect to home page
+                            storeSetupForm.reset();
+                            storeSetupLocationDisplay.style.display = 'none';
+                            storeLocationData = null;
+                            storeSetupModal.classList.remove('show');
+                            mainHeader.classList.remove('header-admin-mode');
+                            adminDashboard.classList.remove('show');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                            loginModal.classList.remove('show');
+                        } else {
+                            // For other nextPage values
+                            console.log('nextPage value:', nextPage);
+                            // Default: close modal and show home page
+                            storeSetupForm.reset();
+                            storeSetupLocationDisplay.style.display = 'none';
+                            storeLocationData = null;
+                            storeSetupModal.classList.remove('show');
+                            mainHeader.classList.remove('header-admin-mode');
+                            adminDashboard.classList.remove('show');
+                            mainContentArea.style.display = 'block';
+                            document.querySelector('.search-bar').style.display = 'flex';
+                        }
+                    } else {
+                        // If no nextPage specified, default: close modal and show home
+                        storeSetupForm.reset();
+                        storeSetupLocationDisplay.style.display = 'none';
+                        storeLocationData = null;
+                        storeSetupModal.classList.remove('show');
+                        mainContentArea.style.display = 'block';
+                        document.querySelector('.search-bar').style.display = 'flex';
+                    }
                 }
             } catch (error) {
                 console.error('Store setup error:', error);
