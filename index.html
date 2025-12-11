@@ -298,7 +298,7 @@
         .accordion-menu {
             position: fixed;
             top: 70px;
-            right: 20px;
+            left: 20px;
             background: var(--white);
             border-radius: 16px;
             box-shadow: var(--shadow-lg);
@@ -1387,9 +1387,10 @@
             <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                 <div class="store-selector">
                     <button class="store-selector-btn" id="storeSelectorBtn">
-                        جواهری ستارزاده
+                        انتخاب مغازه
                     </button>
                     <div class="store-dropdown" id="storeDropdown">
+                        <div class="store-option" data-store="">انتخاب مغازه</div>
                         <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
                         <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
                         <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
@@ -1622,7 +1623,7 @@
                         <textarea class="form-textarea" id="supportText" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="supportNumber">شماره</label>
+                        <label class="form-label" for="supportNumber">شماره تماس</label>
                         <input type="tel" class="form-input" id="supportNumber" required />
                     </div>
                     <button type="submit" class="form-submit-btn" id="supportSubmitBtn">ارسال</button>
@@ -1817,7 +1818,7 @@
 
         // Store list
         const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲'];
-        let selectedStore = stores[0];
+        let selectedStore = ''; // No store selected by default
 
         // DOM Elements
         const storeSelectorBtn = document.getElementById('storeSelectorBtn');
@@ -1914,7 +1915,8 @@
         storeDropdown.querySelectorAll('.store-option').forEach(option => {
             option.addEventListener('click', function() {
                 selectedStore = this.getAttribute('data-store');
-                storeSelectorBtn.textContent = selectedStore;
+                const displayText = selectedStore || 'انتخاب مغازه';
+                storeSelectorBtn.textContent = displayText;
                 storeDropdown.classList.remove('show');
             });
         });
@@ -2250,6 +2252,13 @@
 
             setSearchState(true);
 
+            // Check if store is selected
+            if (!selectedStore || selectedStore === '') {
+                appendMessage('bot', 'ابتدا مغازه خود را انتخاب کنید.');
+                setSearchState(false);
+                return;
+            }
+
             const payload = {
                 store: selectedStore,
                 query,
@@ -2303,6 +2312,12 @@
 
         // Address functionality
         function showAddressLocation() {
+            // Check if store is selected
+            if (!selectedStore || selectedStore === '') {
+                alert('ابتدا مغازه خود را انتخاب کنید.');
+                return;
+            }
+            
             // Show modal
             addressModal.classList.add('show');
             modalAddress.textContent = 'در حال بارگذاری آدرس...';
@@ -2537,6 +2552,9 @@
             adminDashboard.classList.remove('show');
             mainContentArea.style.display = 'block';
             document.querySelector('.search-bar').style.display = 'flex';
+            
+            // Clear search results (images from "10 محصول آخر")
+            searchResults.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>برای جستجو، نوع طلا و قیمت را در کادر پایین وارد کنید</div></div>';
         });
 
         // Fetch gold prices
