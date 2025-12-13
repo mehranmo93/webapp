@@ -517,6 +517,39 @@
             line-height: 1.6;
         }
 
+        .store-folder {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--gold-light);
+            animation: fadeIn 0.4s ease-in;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .store-folder:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--gold-primary);
+        }
+
+        .store-folder-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: var(--gray-light);
+        }
+
+        .store-folder-text {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+            text-align: center;
+            font-weight: 500;
+        }
+
         /* Search Bar */
         .search-bar {
             position: fixed;
@@ -1396,7 +1429,6 @@
                         <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
                     </div>
                 </div>
-                <button class="address-btn" id="addressBtn">آدرس</button>
             </div>
             <div class="header-admin-buttons">
                 <button class="header-admin-btn header-admin-btn-products" id="headerProductsBtn">10 محصول آخر</button>
@@ -1688,6 +1720,22 @@
         </div>
     </div>
 
+    <!-- Store Detail Page -->
+    <div class="admin-page" id="storeDetailPage" style="display: none;">
+        <div class="admin-page-content">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="admin-page-back-btn" id="storeDetailBackBtn">←</button>
+                <button class="address-btn" id="storeDetailAddressBtn" style="margin: 0;">آدرس</button>
+                <h2 id="storeDetailName" style="margin: 0; flex: 1; text-align: right; min-width: 200px;">نام فروشگاه</h2>
+            </div>
+            <div id="storeDetailAddressContainer" style="display: none; margin-bottom: 20px; padding: 16px; background: var(--gray-light); border-radius: 12px;">
+                <div id="storeDetailAddressText" style="margin-bottom: 12px; font-size: 14px; color: #333;"></div>
+                <div id="storeDetailAddressLocation" style="padding: 12px; background: white; border-radius: 8px;"></div>
+            </div>
+            <div id="storeDetailProducts" class="delete-edit-results" style="display: block; max-height: calc(100vh - 300px); overflow-y: auto;"></div>
+        </div>
+    </div>
+
     <!-- Colored Pages -->
     <div class="colored-page green" id="greenPage">
         <div class="colored-page-content">
@@ -1897,6 +1945,17 @@
         const deleteEditActions = document.getElementById('deleteEditActions');
         const deleteActionBtn = document.getElementById('deleteActionBtn');
         const editActionBtn = document.getElementById('editActionBtn');
+        const storeDetailPage = document.getElementById('storeDetailPage');
+        const storeDetailBackBtn = document.getElementById('storeDetailBackBtn');
+        const storeDetailAddressBtn = document.getElementById('storeDetailAddressBtn');
+        const storeDetailName = document.getElementById('storeDetailName');
+        const storeDetailAddressContainer = document.getElementById('storeDetailAddressContainer');
+        const storeDetailAddressText = document.getElementById('storeDetailAddressText');
+        const storeDetailAddressLocation = document.getElementById('storeDetailAddressLocation');
+        const storeDetailProducts = document.getElementById('storeDetailProducts');
+        
+        // Store current store data for detail page
+        let currentStoreData = null;
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -2275,6 +2334,16 @@
                     body: JSON.stringify(payload)
                 });
 
+                // Get raw response data first for store detection
+                let rawResponseData = null;
+                try {
+                    const responseClone = response.clone();
+                    rawResponseData = await responseClone.json().catch(() => null);
+                } catch(e) {
+                    // If response is not JSON, continue with extractResponses
+                    console.error('Error reading raw response:', e);
+                }
+                
                 const responses = await extractResponses(response);
 
                 if (!response.ok) {
@@ -2285,12 +2354,59 @@
                 if (!responses.length) {
                     updateMessage(botPlaceholder, 'پاسخی دریافت نشد');
                 } else {
-                    renderMessageContent(botPlaceholder, responses[0]);
-                    if (responses.length > 1) {
-                        responses.slice(1).forEach(item => {
-                            const extraMessage = appendMessage('bot', '');
-                            renderMessageContent(extraMessage, item);
-                        });
+                    // Check if no store is selected and response contains stores
+                    if ((!selectedStore || selectedStore === '') && rawResponseData) {
+                        let storesArray = null;
+                        
+                        // Check if rawResponseData is an array
+                        if (Array.isArray(rawResponseData) && rawResponseData.length > 0) {
+                            storesArray = rawResponseData;
+                        } 
+                        // Check if rawResponseData has a stores/items/results array
+                        else if (typeof rawResponseData === 'object') {
+                            storesArray = rawResponseData.stores || rawResponseData.items || rawResponseData.results || 
+                                         rawResponseData.data || rawResponseData.list || null;
+                        }
+                        
+                        // If we found a stores array, check if items look like stores
+                        if (storesArray && Array.isArray(storesArray) && storesArray.length > 0) {
+                            const firstItem = storesArray[0];
+                            const hasImage = firstItem.image || firstItem.url || firstItem.image_url || firstItem.photo || firstItem.type === 'image';
+                            const hasText = firstItem.text || firstItem.result || firstItem.نتیجه || firstItem.caption || firstItem.description;
+                            
+                            if (hasImage || hasText) {
+                                // Display store folders using raw data to preserve all fields
+                                displayStoreFolders(storesArray);
+                                botPlaceholder.remove();
+                            } else {
+                                // Normal response handling
+                                renderMessageContent(botPlaceholder, responses[0]);
+                                if (responses.length > 1) {
+                                    responses.slice(1).forEach(item => {
+                                        const extraMessage = appendMessage('bot', '');
+                                        renderMessageContent(extraMessage, item);
+                                    });
+                                }
+                            }
+                        } else {
+                            // Normal response handling
+                            renderMessageContent(botPlaceholder, responses[0]);
+                            if (responses.length > 1) {
+                                responses.slice(1).forEach(item => {
+                                    const extraMessage = appendMessage('bot', '');
+                                    renderMessageContent(extraMessage, item);
+                                });
+                            }
+                        }
+                    } else {
+                        // Normal response handling when store is selected
+                        renderMessageContent(botPlaceholder, responses[0]);
+                        if (responses.length > 1) {
+                            responses.slice(1).forEach(item => {
+                                const extraMessage = appendMessage('bot', '');
+                                renderMessageContent(extraMessage, item);
+                            });
+                        }
                     }
                 }
             } catch (error) {
@@ -2311,7 +2427,155 @@
             }
         });
 
-        // Address functionality
+        // Display store folders when no store is selected
+        function displayStoreFolders(stores) {
+            clearEmptyState();
+            searchResults.innerHTML = '';
+            
+            stores.forEach((storeData, index) => {
+                const storeFolder = document.createElement('div');
+                storeFolder.className = 'store-folder';
+                
+                const imageUrl = storeData.image || storeData.url || storeData.image_url || storeData.photo || '';
+                const storeName = storeData.text || storeData.result || storeData.نتیجه || storeData.caption || storeData.description || 'فروشگاه';
+                
+                storeFolder.innerHTML = `
+                    <img src="${imageUrl}" alt="${storeName}" class="store-folder-image" onerror="this.style.display='none';" />
+                    <div class="store-folder-text">${storeName}</div>
+                `;
+                
+                storeFolder.addEventListener('click', function() {
+                    // Navigate to store detail page
+                    currentStoreData = {
+                        name: storeName,
+                        image: imageUrl,
+                        username: storeData.username || storeData.store || storeName,
+                        allData: storeData
+                    };
+                    showStoreDetailPage(storeData);
+                });
+                
+                searchResults.appendChild(storeFolder);
+            });
+            
+            scrollToBottom();
+        }
+        
+        // Show store detail page
+        function showStoreDetailPage(storeData) {
+            const storeName = storeData.نتیجه || storeData.result || storeData.text || storeData.caption || storeData.description || storeData.store || storeData.username || 'فروشگاه';
+            const storeUsername = storeData.username || storeData.store || storeName;
+            
+            currentStoreData = {
+                name: storeName,
+                username: storeUsername,
+                image: storeData.image || storeData.url || storeData.image_url || storeData.photo || (storeData.type === 'image' ? storeData.url : ''),
+                allData: storeData
+            };
+            
+            // Hide main content and show store detail page
+            mainContentArea.style.display = 'none';
+            document.querySelector('.search-bar').style.display = 'none';
+            storeDetailPage.style.display = 'block';
+            storeDetailPage.classList.add('show');
+            backBtn.style.display = 'flex';
+            
+            // Set store name
+            storeDetailName.textContent = storeName;
+            
+            // Hide address container initially
+            storeDetailAddressContainer.style.display = 'none';
+            
+            // Clear and prepare products area
+            storeDetailProducts.innerHTML = '';
+            
+            // Display store image if available
+            const imageUrl = storeData.image || storeData.url || storeData.image_url || storeData.photo || (storeData.type === 'image' ? storeData.url : '');
+            if (imageUrl) {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'delete-edit-image-item';
+                imageItem.innerHTML = `
+                    <img src="${imageUrl}" alt="${storeName}" />
+                    <div class="delete-edit-image-caption">${storeName}</div>
+                `;
+                storeDetailProducts.appendChild(imageItem);
+            }
+        }
+        
+        // Store detail back button
+        if (storeDetailBackBtn) {
+            storeDetailBackBtn.addEventListener('click', function() {
+                storeDetailPage.classList.remove('show');
+                storeDetailPage.style.display = 'none';
+                mainContentArea.style.display = 'block';
+                document.querySelector('.search-bar').style.display = 'flex';
+                backBtn.style.display = 'none';
+            });
+        }
+        
+        // Store detail address button
+        if (storeDetailAddressBtn) {
+            storeDetailAddressBtn.addEventListener('click', async function() {
+                if (!currentStoreData || !currentStoreData.username) {
+                    alert('اطلاعات فروشگاه در دسترس نیست');
+                    return;
+                }
+                
+                storeDetailAddressBtn.disabled = true;
+                storeDetailAddressBtn.textContent = 'در حال بارگذاری...';
+                storeDetailAddressContainer.style.display = 'block';
+                storeDetailAddressText.textContent = 'در حال بارگذاری آدرس...';
+                storeDetailAddressLocation.innerHTML = '';
+                
+                try {
+                    const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: currentStoreData.username,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('خطا در دریافت آدرس');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Display address text
+                    if (data.text || data.address || data.message) {
+                        storeDetailAddressText.textContent = data.text || data.address || data.message;
+                    } else {
+                        storeDetailAddressText.textContent = '';
+                    }
+                    
+                    // Display location if available
+                    if (data.latitude && data.longitude) {
+                        const locationContent = createLocationContent({
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            text: data.location_text || data.text || 'آدرس فروشگاه'
+                        });
+                        storeDetailAddressLocation.innerHTML = '';
+                        storeDetailAddressLocation.appendChild(locationContent);
+                    } else if (data.location) {
+                        storeDetailAddressLocation.textContent = data.location;
+                    }
+                    
+                } catch (error) {
+                    console.error('Address error:', error);
+                    storeDetailAddressText.textContent = 'خطا در دریافت آدرس. لطفاً دوباره تلاش کنید.';
+                } finally {
+                    storeDetailAddressBtn.disabled = false;
+                    storeDetailAddressBtn.textContent = 'آدرس';
+                }
+            });
+        }
+
+        // Address functionality (old - can be removed if not needed elsewhere)
         function showAddressLocation() {
             // Check if store is selected
             if (!selectedStore || selectedStore === '') {
@@ -2358,7 +2622,6 @@
         }
 
         // Address button click
-        addressBtn.addEventListener('click', showAddressLocation);
 
         // Modal close functionality
         closeModalBtn.addEventListener('click', function() {
