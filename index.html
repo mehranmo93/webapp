@@ -541,13 +541,21 @@
             background-color: var(--gray-light);
         }
 
-        .store-folder-text {
-            padding: 12px 16px;
-            font-size: 14px;
+        .store-folder-name {
+            padding: 12px 16px 8px;
+            font-size: 16px;
             color: #333;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1px solid var(--gold-light);
+        }
+
+        .store-folder-text {
+            padding: 8px 16px 12px;
+            font-size: 14px;
+            color: #666;
             line-height: 1.6;
             text-align: center;
-            font-weight: 500;
         }
 
         /* Search Bar */
@@ -2428,31 +2436,62 @@
         });
 
         // Display store folders when no store is selected
+        // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
         function displayStoreFolders(stores) {
             clearEmptyState();
             searchResults.innerHTML = '';
             
-            stores.forEach((storeData, index) => {
+            let currentStore = null;
+            const storesList = [];
+            
+            // Process items sequentially
+            stores.forEach((item) => {
+                // Check if this item has store_name - it means a new store starts
+                if (item.store_name) {
+                    // Save previous store if exists
+                    if (currentStore) {
+                        storesList.push(currentStore);
+                    }
+                    // Create new store folder
+                    currentStore = {
+                        store_name: item.store_name,
+                        نتیجه: item.نتیجه || item.result || null,
+                        images: []
+                    };
+                } else if (currentStore) {
+                    // This is an image for the current store
+                    const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                    if (imageUrl) {
+                        currentStore.images.push({
+                            url: imageUrl,
+                            info: item.info || item.text || item.caption || item.description || ''
+                        });
+                    }
+                }
+            });
+            
+            // Don't forget the last store
+            if (currentStore) {
+                storesList.push(currentStore);
+            }
+            
+            // Create folders for each store
+            storesList.forEach((storeGroup) => {
                 const storeFolder = document.createElement('div');
                 storeFolder.className = 'store-folder';
                 
-                const imageUrl = storeData.image || storeData.url || storeData.image_url || storeData.photo || '';
-                const storeName = storeData.text || storeData.result || storeData.نتیجه || storeData.caption || storeData.description || 'فروشگاه';
+                // Use the first image as the folder preview
+                const previewImage = storeGroup.images.length > 0 ? storeGroup.images[0].url : '';
                 
                 storeFolder.innerHTML = `
-                    <img src="${imageUrl}" alt="${storeName}" class="store-folder-image" onerror="this.style.display='none';" />
-                    <div class="store-folder-text">${storeName}</div>
+                    ${previewImage ? `<img src="${previewImage}" alt="${storeGroup.store_name}" class="store-folder-image" onerror="this.style.display='none';" />` : '<div class="store-folder-image" style="background: var(--gold-light); display: flex; align-items: center; justify-content: center; font-size: 48px;">📁</div>'}
+                    <div class="store-folder-name">${storeGroup.store_name}</div>
+                    ${storeGroup.نتیجه ? `<div class="store-folder-text">${storeGroup.نتیجه}</div>` : ''}
                 `;
                 
                 storeFolder.addEventListener('click', function() {
-                    // Navigate to store detail page
-                    currentStoreData = {
-                        name: storeName,
-                        image: imageUrl,
-                        username: storeData.username || storeData.store || storeName,
-                        allData: storeData
-                    };
-                    showStoreDetailPage(storeData);
+                    // Navigate to store detail page with all images
+                    showStoreDetailPage(storeGroup);
                 });
                 
                 searchResults.appendChild(storeFolder);
@@ -2462,15 +2501,14 @@
         }
         
         // Show store detail page
-        function showStoreDetailPage(storeData) {
-            const storeName = storeData.نتیجه || storeData.result || storeData.text || storeData.caption || storeData.description || storeData.store || storeData.username || 'فروشگاه';
-            const storeUsername = storeData.username || storeData.store || storeName;
+        function showStoreDetailPage(storeGroup) {
+            const storeName = storeGroup.store_name || 'فروشگاه';
             
             currentStoreData = {
                 name: storeName,
-                username: storeUsername,
-                image: storeData.image || storeData.url || storeData.image_url || storeData.photo || (storeData.type === 'image' ? storeData.url : ''),
-                allData: storeData
+                store_name: storeName, // Use store_name for address request
+                images: storeGroup.images || [],
+                allData: storeGroup
             };
             
             // Hide main content and show store detail page
@@ -2489,16 +2527,17 @@
             // Clear and prepare products area
             storeDetailProducts.innerHTML = '';
             
-            // Display store image if available
-            const imageUrl = storeData.image || storeData.url || storeData.image_url || storeData.photo || (storeData.type === 'image' ? storeData.url : '');
-            if (imageUrl) {
-                const imageItem = document.createElement('div');
-                imageItem.className = 'delete-edit-image-item';
-                imageItem.innerHTML = `
-                    <img src="${imageUrl}" alt="${storeName}" />
-                    <div class="delete-edit-image-caption">${storeName}</div>
-                `;
-                storeDetailProducts.appendChild(imageItem);
+            // Display all images with their info beneath each image
+            if (storeGroup.images && storeGroup.images.length > 0) {
+                storeGroup.images.forEach((imageData) => {
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'delete-edit-image-item';
+                    imageItem.innerHTML = `
+                        <img src="${imageData.url}" alt="${storeName}" />
+                        ${imageData.info ? `<div class="delete-edit-image-caption">${imageData.info}</div>` : ''}
+                    `;
+                    storeDetailProducts.appendChild(imageItem);
+                });
             }
         }
         
@@ -2516,7 +2555,7 @@
         // Store detail address button
         if (storeDetailAddressBtn) {
             storeDetailAddressBtn.addEventListener('click', async function() {
-                if (!currentStoreData || !currentStoreData.username) {
+                if (!currentStoreData || !currentStoreData.store_name) {
                     alert('اطلاعات فروشگاه در دسترس نیست');
                     return;
                 }
@@ -2534,7 +2573,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            username: currentStoreData.username,
+                            store_name: currentStoreData.store_name,
                             timestamp: new Date().toISOString()
                         })
                     });
