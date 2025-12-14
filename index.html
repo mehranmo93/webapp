@@ -2018,6 +2018,21 @@
             }
 
             searchResults.appendChild(messageEl);
+            
+            // Keep only last 2 queries and responses (4 messages total: 2 user + 2 bot)
+            // But if we're showing store folders, don't limit
+            const allMessages = searchResults.querySelectorAll('.message');
+            const storeFolders = searchResults.querySelectorAll('.store-folder');
+            
+            // Only limit if we have messages (not store folders)
+            if (storeFolders.length === 0 && allMessages.length > 4) {
+                // Remove oldest messages, keep last 4 (2 queries + 2 responses)
+                const messagesToRemove = allMessages.length - 4;
+                for (let i = 0; i < messagesToRemove; i++) {
+                    allMessages[i].remove();
+                }
+            }
+            
             scrollToBottom();
 
             return messageEl;
@@ -2351,7 +2366,7 @@
                     // If response is not JSON, continue with extractResponses
                     console.error('Error reading raw response:', e);
                 }
-                
+
                 const responses = await extractResponses(response);
 
                 if (!response.ok) {
@@ -2388,12 +2403,12 @@
                                 botPlaceholder.remove();
                             } else {
                                 // Normal response handling
-                                renderMessageContent(botPlaceholder, responses[0]);
-                                if (responses.length > 1) {
-                                    responses.slice(1).forEach(item => {
-                                        const extraMessage = appendMessage('bot', '');
-                                        renderMessageContent(extraMessage, item);
-                                    });
+                    renderMessageContent(botPlaceholder, responses[0]);
+                    if (responses.length > 1) {
+                        responses.slice(1).forEach(item => {
+                            const extraMessage = appendMessage('bot', '');
+                            renderMessageContent(extraMessage, item);
+                        });
                                 }
                             }
                         } else {
@@ -2438,8 +2453,27 @@
         // Display store folders when no store is selected
         // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
         function displayStoreFolders(stores) {
+            // Keep last 2 queries and responses before clearing
+            const allMessages = searchResults.querySelectorAll('.message');
+            const messagesToKeep = [];
+            
+            // Get last 4 messages (2 user queries + 2 bot responses)
+            if (allMessages.length > 4) {
+                for (let i = allMessages.length - 4; i < allMessages.length; i++) {
+                    messagesToKeep.push(allMessages[i].cloneNode(true));
+                }
+            } else {
+                // Keep all existing messages
+                allMessages.forEach(msg => messagesToKeep.push(msg.cloneNode(true)));
+            }
+            
             clearEmptyState();
             searchResults.innerHTML = '';
+            
+            // Restore kept messages
+            messagesToKeep.forEach(msg => {
+                searchResults.appendChild(msg);
+            });
             
             let currentStore = null;
             const storesList = [];
@@ -2573,6 +2607,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
+                            action: 'address',
                             store_name: currentStoreData.store_name,
                             timestamp: new Date().toISOString()
                         })
@@ -3552,7 +3587,7 @@
                             alert('لطفاً دوباره وارد شوید');
                         } else if (data.nextPage === 'home') {
                             // Stay on home page (already there)
-                            alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
+                    alert('قیمت‌ها با موفقیت به‌روزرسانی شدند');
                         }
                     } else {
                         // No nextPage specified, show success message
@@ -4145,7 +4180,7 @@
                             document.querySelector('.search-bar').style.display = 'flex';
                         } else if (nextpage === 'admin/delete_edit_search') {
                             // Stay on delete/edit page - display results
-                            displayDeleteEditResults(data);
+                    displayDeleteEditResults(data);
                         } else {
                             // Default: go back to admin dashboard
                             deleteEditPage.classList.remove('show');
