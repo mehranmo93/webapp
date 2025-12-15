@@ -550,14 +550,6 @@
             border-bottom: 1px solid var(--gold-light);
         }
 
-        .store-folder-info {
-            padding: 4px 16px 8px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-            line-height: 1.4;
-        }
-
         .store-folder-text {
             padding: 8px 16px 12px;
             font-size: 14px;
@@ -979,7 +971,7 @@
             bottom: 0;
             background: linear-gradient(135deg, var(--cream-bg) 0%, var(--cream-light) 100%);
             z-index: 2000;
-            padding: 60px 20px 20px 20px;
+            padding: 20px 10px 10px 10px;
             overflow-y: auto;
         }
 
@@ -1001,7 +993,11 @@
         }
         
         #storeDetailPage .admin-page-content {
-            max-width: 95%;
+            max-width: 98%;
+            width: calc(100% - 20px);
+            padding: 24px;
+            padding-left: 60px;
+            min-height: calc(100vh - 40px);
         }
 
         .admin-page-back-btn {
@@ -1150,7 +1146,6 @@
             border-radius: 8px;
             object-fit: cover;
             margin-bottom: 8px;
-            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
         }
 
         .delete-edit-image-caption {
@@ -1747,7 +1742,10 @@
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
                 <button class="admin-page-back-btn" id="storeDetailBackBtn">←</button>
                 <button class="address-btn" id="storeDetailAddressBtn" style="margin: 0;">آدرس</button>
-                <h2 id="storeDetailName" style="margin: 0; flex: 1; text-align: right; min-width: 200px;">نام فروشگاه</h2>
+                <div style="flex: 1; text-align: right; min-width: 200px;">
+                    <h2 id="storeDetailName" style="margin: 0 0 8px 0;">نام فروشگاه</h2>
+                    <div id="storeDetailInfo" style="font-size: 12px; color: #666; line-height: 1.4;"></div>
+                </div>
             </div>
             <div id="storeDetailAddressContainer" style="display: none; margin-bottom: 20px; padding: 16px; background: var(--gray-light); border-radius: 12px;">
                 <div id="storeDetailAddressText" style="margin-bottom: 12px; font-size: 14px; color: #333;"></div>
@@ -1970,6 +1968,7 @@
         const storeDetailBackBtn = document.getElementById('storeDetailBackBtn');
         const storeDetailAddressBtn = document.getElementById('storeDetailAddressBtn');
         const storeDetailName = document.getElementById('storeDetailName');
+        const storeDetailInfo = document.getElementById('storeDetailInfo');
         const storeDetailAddressContainer = document.getElementById('storeDetailAddressContainer');
         const storeDetailAddressText = document.getElementById('storeDetailAddressText');
         const storeDetailAddressLocation = document.getElementById('storeDetailAddressLocation');
@@ -2544,7 +2543,6 @@
                 storeFolder.innerHTML = `
                     ${previewImage ? `<img src="${previewImage}" alt="${storeGroup.store_name}" class="store-folder-image" onerror="this.style.display='none';" />` : '<div class="store-folder-image" style="background: var(--gold-light); display: flex; align-items: center; justify-content: center; font-size: 48px;">📁</div>'}
                     <div class="store-folder-name">${storeGroup.store_name}</div>
-                    ${storeGroup.store_info ? `<div class="store-folder-info">${storeGroup.store_info}</div>` : ''}
                     ${formattedResult ? `<div class="store-folder-text">${formattedResult}</div>` : ''}
                 `;
                 
@@ -2580,6 +2578,15 @@
             // Set store name (ensure store_info is not included)
             storeDetailName.textContent = storeName;
             
+            // Set store_info below store_name
+            const storeInfo = storeGroup.store_info || storeGroup.storeInfo || null;
+            if (storeInfo) {
+                storeDetailInfo.textContent = storeInfo;
+                storeDetailInfo.style.display = 'block';
+            } else {
+                storeDetailInfo.style.display = 'none';
+            }
+            
             // Hide address container initially
             storeDetailAddressContainer.style.display = 'none';
             
@@ -2587,11 +2594,10 @@
             storeDetailProducts.innerHTML = '';
             
             // Display all images with their info beneath each image
-            // Filter out store_info from image captions (store_info should only appear in folder)
-            const storeInfo = storeGroup.store_info || storeGroup.storeInfo || null;
+            // Filter out store_info from image captions (store_info should only appear in detail page header)
             if (storeGroup.images && storeGroup.images.length > 0) {
                 storeGroup.images.forEach((imageData) => {
-                    // Don't display store_info in image caption - it should only be in folder
+                    // Don't display store_info in image caption - it should only be in detail page header
                     let imageInfo = imageData.info || '';
                     if (storeInfo && imageInfo === storeInfo) {
                         imageInfo = '';
