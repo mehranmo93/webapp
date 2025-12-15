@@ -550,6 +550,14 @@
             border-bottom: 1px solid var(--gold-light);
         }
 
+        .store-folder-info {
+            padding: 4px 16px 8px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            line-height: 1.4;
+        }
+
         .store-folder-text {
             padding: 8px 16px 12px;
             font-size: 14px;
@@ -1136,8 +1144,8 @@
             width: 100%;
             border-radius: 8px;
             object-fit: cover;
-            max-height: 300px;
             margin-bottom: 8px;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
         }
 
         .delete-edit-image-caption {
@@ -2400,9 +2408,10 @@
                             const hasText = firstItem.text || firstItem.result || firstItem.نتیجه || firstItem.caption || firstItem.description;
                             
                             if (hasImage || hasText) {
+                                // Remove placeholder before displaying folders
+                                botPlaceholder.remove();
                                 // Display store folders using raw data to preserve all fields
                                 displayStoreFolders(storesArray);
-                                botPlaceholder.remove();
                             } else {
                                 // Normal response handling
                     renderMessageContent(botPlaceholder, responses[0]);
@@ -2492,6 +2501,7 @@
                     currentStore = {
                         store_name: item.store_name,
                         نتیجه: item.نتیجه || item.result || null,
+                        store_info: item.store_info || item.storeInfo || item.info || null,
                         images: []
                     };
                 } else if (currentStore) {
@@ -2519,10 +2529,18 @@
                 // Use the first image as the folder preview
                 const previewImage = storeGroup.images.length > 0 ? storeGroup.images[0].url : '';
                 
+                // Format نتیجه text: make numbers bold and green
+                let formattedResult = '';
+                if (storeGroup.نتیجه) {
+                    // Match pattern: number followed by text (e.g., "4 مورد در جواهری مهران یافت شد")
+                    formattedResult = storeGroup.نتیجه.replace(/(\d+)/g, '<span style="font-weight: bold; color: green;">$1</span>');
+                }
+                
                 storeFolder.innerHTML = `
                     ${previewImage ? `<img src="${previewImage}" alt="${storeGroup.store_name}" class="store-folder-image" onerror="this.style.display='none';" />` : '<div class="store-folder-image" style="background: var(--gold-light); display: flex; align-items: center; justify-content: center; font-size: 48px;">📁</div>'}
                     <div class="store-folder-name">${storeGroup.store_name}</div>
-                    ${storeGroup.نتیجه ? `<div class="store-folder-text">${storeGroup.نتیجه}</div>` : ''}
+                    ${storeGroup.store_info ? `<div class="store-folder-info">${storeGroup.store_info}</div>` : ''}
+                    ${formattedResult ? `<div class="store-folder-text">${formattedResult}</div>` : ''}
                 `;
                 
                 storeFolder.addEventListener('click', function() {
