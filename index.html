@@ -979,7 +979,7 @@
             bottom: 0;
             background: linear-gradient(135deg, var(--cream-bg) 0%, var(--cream-light) 100%);
             z-index: 2000;
-            padding: 80px 20px 20px 20px;
+            padding: 60px 20px 20px 20px;
             overflow-y: auto;
         }
 
@@ -993,10 +993,15 @@
             border-radius: 24px;
             padding: 32px;
             padding-left: 80px;
-            max-width: 520px;
+            max-width: 90%;
+            width: 100%;
             margin: 0 auto;
             position: relative;
             box-shadow: var(--shadow-lg);
+        }
+        
+        #storeDetailPage .admin-page-content {
+            max-width: 95%;
         }
 
         .admin-page-back-btn {
@@ -2529,11 +2534,11 @@
                 // Use the first image as the folder preview
                 const previewImage = storeGroup.images.length > 0 ? storeGroup.images[0].url : '';
                 
-                // Format نتیجه text: make numbers bold and green
+                // Format نتیجه text: make numbers bigger, bold, green and fancy
                 let formattedResult = '';
                 if (storeGroup.نتیجه) {
                     // Match pattern: number followed by text (e.g., "4 مورد در جواهری مهران یافت شد")
-                    formattedResult = storeGroup.نتیجه.replace(/(\d+)/g, '<span style="font-weight: bold; color: green;">$1</span>');
+                    formattedResult = storeGroup.نتیجه.replace(/(\d+)/g, '<span style="font-weight: bold; color: #22c55e; font-size: 1.3em; text-shadow: 0 2px 4px rgba(34, 197, 94, 0.3); display: inline-block; transform: scale(1.1);">$1</span>');
                 }
                 
                 storeFolder.innerHTML = `
@@ -2572,7 +2577,7 @@
             storeDetailPage.classList.add('show');
             backBtn.style.display = 'flex';
             
-            // Set store name
+            // Set store name (ensure store_info is not included)
             storeDetailName.textContent = storeName;
             
             // Hide address container initially
@@ -2582,13 +2587,21 @@
             storeDetailProducts.innerHTML = '';
             
             // Display all images with their info beneath each image
+            // Filter out store_info from image captions (store_info should only appear in folder)
+            const storeInfo = storeGroup.store_info || storeGroup.storeInfo || null;
             if (storeGroup.images && storeGroup.images.length > 0) {
                 storeGroup.images.forEach((imageData) => {
+                    // Don't display store_info in image caption - it should only be in folder
+                    let imageInfo = imageData.info || '';
+                    if (storeInfo && imageInfo === storeInfo) {
+                        imageInfo = '';
+                    }
+                    
                     const imageItem = document.createElement('div');
                     imageItem.className = 'delete-edit-image-item';
                     imageItem.innerHTML = `
                         <img src="${imageData.url}" alt="${storeName}" />
-                        ${imageData.info ? `<div class="delete-edit-image-caption">${imageData.info}</div>` : ''}
+                        ${imageInfo ? `<div class="delete-edit-image-caption">${imageInfo}</div>` : ''}
                     `;
                     storeDetailProducts.appendChild(imageItem);
                 });
