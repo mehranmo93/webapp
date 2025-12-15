@@ -2041,6 +2041,8 @@
         function updateMessage(messageEl, content) {
             if (!messageEl) return;
             messageEl.classList.remove('typing-dots');
+            // Clear any pending/loading text
+            messageEl.textContent = '';
 
             if (typeof content === 'string') {
                 messageEl.textContent = content;
@@ -2586,7 +2588,7 @@
             });
         }
         
-        // Store detail address button
+        // Store detail address button - fetches latitude and longitude from backend and opens Google Maps
         if (storeDetailAddressBtn) {
             storeDetailAddressBtn.addEventListener('click', async function() {
                 if (!currentStoreData || !currentStoreData.store_name) {
@@ -2595,10 +2597,8 @@
                 }
                 
                 storeDetailAddressBtn.disabled = true;
+                const originalText = storeDetailAddressBtn.textContent;
                 storeDetailAddressBtn.textContent = 'در حال بارگذاری...';
-                storeDetailAddressContainer.style.display = 'block';
-                storeDetailAddressText.textContent = 'در حال بارگذاری آدرس...';
-                storeDetailAddressLocation.innerHTML = '';
                 
                 try {
                     const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b', {
@@ -2617,34 +2617,78 @@
                         throw new Error('خطا در دریافت آدرس');
                     }
                     
-                    const data = await response.json();
+                    const responseData = await response.json();
                     
-                    // Display address text
-                    if (data.text || data.address || data.message) {
-                        storeDetailAddressText.textContent = data.text || data.address || data.message;
+                    // Helper function to extract coordinates from various response structures
+                    function extractCoordinates(data) {
+                        // If data is an array, check first item
+                        if (Array.isArray(data) && data.length > 0) {
+                            return extractCoordinates(data[0]);
+                        }
+                        
+                        // Check direct properties
+                        if (data.latitude && data.longitude) {
+                            return { latitude: data.latitude, longitude: data.longitude };
+                        }
+                        if (data.lat && data.lng) {
+                            return { latitude: data.lat, longitude: data.lng };
+                        }
+                        if (data.lat && data.lon) {
+                            return { latitude: data.lat, longitude: data.lon };
+                        }
+                        
+                        // Check nested structures
+                        if (data.data) {
+                            const nested = extractCoordinates(data.data);
+                            if (nested) return nested;
+                        }
+                        if (data.result) {
+                            const nested = extractCoordinates(data.result);
+                            if (nested) return nested;
+                        }
+                        if (data.response) {
+                            const nested = extractCoordinates(data.response);
+                            if (nested) return nested;
+                        }
+                        if (data.location) {
+                            const nested = extractCoordinates(data.location);
+                            if (nested) return nested;
+                        }
+                        
+                        // Check common array keys
+                        const arrayKeys = ['items', 'results', 'data', 'locations'];
+                        for (const key of arrayKeys) {
+                            if (Array.isArray(data[key]) && data[key].length > 0) {
+                                const nested = extractCoordinates(data[key][0]);
+                                if (nested) return nested;
+                            }
+                        }
+                        
+                        return null;
+                    }
+                    
+                    const coords = extractCoordinates(responseData);
+                    
+                    if (coords && coords.latitude && coords.longitude) {
+                        // Validate coordinates are numbers
+                        const lat = parseFloat(coords.latitude);
+                        const lng = parseFloat(coords.longitude);
+                        
+                        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                            // Open Google Maps with coordinates from backend
+                            openGoogleMaps(lat, lng);
+                        } else {
+                            alert('مختصات جغرافیایی نامعتبر است');
+                        }
                     } else {
-                        storeDetailAddressText.textContent = '';
+                        alert('مختصات جغرافیایی در دسترس نیست');
                     }
-                    
-                    // Display location if available
-                    if (data.latitude && data.longitude) {
-                        const locationContent = createLocationContent({
-                            latitude: data.latitude,
-                            longitude: data.longitude,
-                            text: data.location_text || data.text || 'آدرس فروشگاه'
-                        });
-                        storeDetailAddressLocation.innerHTML = '';
-                        storeDetailAddressLocation.appendChild(locationContent);
-                    } else if (data.location) {
-                        storeDetailAddressLocation.textContent = data.location;
-                    }
-                    
                 } catch (error) {
                     console.error('Address error:', error);
-                    storeDetailAddressText.textContent = 'خطا در دریافت آدرس. لطفاً دوباره تلاش کنید.';
+                    alert('خطا در دریافت آدرس. لطفاً دوباره تلاش کنید.');
                 } finally {
                     storeDetailAddressBtn.disabled = false;
-                    storeDetailAddressBtn.textContent = 'آدرس';
+                    storeDetailAddressBtn.textContent = originalText;
                 }
             });
         }
