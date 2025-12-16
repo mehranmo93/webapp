@@ -1443,6 +1443,7 @@
                         <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
                         <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
                         <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
+                        <div class="store-option" data-store="جواهری دژگان">جواهری دژگان</div>
                     </div>
                 </div>
             </div>
@@ -1884,8 +1885,12 @@
         }
 
         // Store list
-        const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲'];
+        const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲', 'جواهری دژگان'];
         let selectedStore = ''; // No store selected by default
+        
+        // Store folder data map: requestId -> stores array (for event delegation)
+        const storeFolderDataMap = new Map();
+        let requestIdCounter = 0;
 
         // DOM Elements
         const storeSelectorBtn = document.getElementById('storeSelectorBtn');
@@ -1976,6 +1981,54 @@
         
         // Store current store data for detail page
         let currentStoreData = null;
+        
+        // Event delegation for store folder clicks (works even after cloning)
+        searchResults.addEventListener('click', function(e) {
+            const folder = e.target.closest('.store-folder');
+            if (!folder) return;
+            
+            const requestId = folder.getAttribute('data-request-id');
+            const storeName = folder.getAttribute('data-store-name');
+            
+            if (!requestId || !storeFolderDataMap.has(requestId)) return;
+            
+            const storesArray = storeFolderDataMap.get(requestId);
+            
+            // Reconstruct the storeGroup from storesArray
+            let currentStore = null;
+            const storesList = [];
+            
+            storesArray.forEach((item) => {
+                if (item.store_name) {
+                    if (currentStore) {
+                        storesList.push(currentStore);
+                    }
+                    currentStore = {
+                        store_name: item.store_name,
+                        نتیجه: item.نتیجه || item.result || null,
+                        store_info: item.store_info || item.storeInfo || item.info || null,
+                        images: []
+                    };
+                } else if (currentStore) {
+                    const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                    if (imageUrl) {
+                        currentStore.images.push({
+                            url: imageUrl,
+                            info: item.info || item.text || item.caption || item.description || ''
+                        });
+                    }
+                }
+            });
+            if (currentStore) {
+                storesList.push(currentStore);
+            }
+            
+            // Find the matching storeGroup
+            const storeGroup = storesList.find(s => s.store_name === storeName);
+            if (storeGroup) {
+                showStoreDetailPage(storeGroup);
+            }
+        });
 
         // Store selector functionality
         storeSelectorBtn.addEventListener('click', function(e) {
@@ -2031,31 +2084,8 @@
 
             searchResults.appendChild(messageEl);
             
-            // Keep last 5 searches (10 messages total: 5 user queries + 5 bot responses)
-            // But if we're showing store folders, keep all folders and limit messages
-            const allMessages = searchResults.querySelectorAll('.message');
-            const storeFolders = searchResults.querySelectorAll('.store-folder');
-            
-            // If we have store folders, keep all folders and limit messages to last 10
-            if (storeFolders.length > 0) {
-                if (allMessages.length > 10) {
-                    const messagesToRemove = allMessages.length - 10;
-                    for (let i = 0; i < messagesToRemove; i++) {
-                        // Don't remove store folders
-                        if (!allMessages[i].classList.contains('store-folder')) {
-                            allMessages[i].remove();
-                        }
-                    }
-                }
-            } else {
-                // No store folders, just limit messages to last 10 (5 searches)
-                if (allMessages.length > 10) {
-                    const messagesToRemove = allMessages.length - 10;
-                    for (let i = 0; i < messagesToRemove; i++) {
-                        allMessages[i].remove();
-                    }
-                }
-            }
+            // Cleanup is handled by cleanupOldItems() which maintains chronological order
+            cleanupOldItems();
             
             scrollToBottom();
 
@@ -2362,10 +2392,15 @@
 
             searchInput.value = '';
 
-            appendMessage('user', query);
+            // Generate unique requestId for this query to maintain chronological order
+            const requestId = `req_${Date.now()}_${++requestIdCounter}`;
+            
+            const userMessageEl = appendMessage('user', query);
+            userMessageEl.setAttribute('data-request-id', requestId);
 
             // Show pending message and proceed (send to backend even if no store selected)
             const botPlaceholder = appendMessage('bot', 'در حال دریافت پاسخ...', { isPending: true });
+            botPlaceholder.setAttribute('data-request-id', requestId);
             setSearchState(true);
 
             const payload = {
@@ -2424,16 +2459,19 @@
                             const hasText = firstItem.text || firstItem.result || firstItem.نتیجه || firstItem.caption || firstItem.description;
                             
                             if (hasImage || hasText) {
+                                // Store folder data for this requestId (for event delegation)
+                                storeFolderDataMap.set(requestId, storesArray);
                                 // Remove placeholder before displaying folders
                                 botPlaceholder.remove();
                                 // Display store folders using raw data to preserve all fields
-                                displayStoreFolders(storesArray);
+                                displayStoreFolders(storesArray, requestId);
                             } else {
                                 // Normal response handling
                     renderMessageContent(botPlaceholder, responses[0]);
                     if (responses.length > 1) {
                         responses.slice(1).forEach(item => {
                             const extraMessage = appendMessage('bot', '');
+                            extraMessage.setAttribute('data-request-id', requestId);
                             renderMessageContent(extraMessage, item);
                         });
                                 }
@@ -2444,17 +2482,18 @@
                             if (responses.length > 1) {
                                 responses.slice(1).forEach(item => {
                                     const extraMessage = appendMessage('bot', '');
+                                    extraMessage.setAttribute('data-request-id', requestId);
                                     renderMessageContent(extraMessage, item);
                                 });
                             }
                         }
                     } else {
                         // Normal response handling when store is selected
-                        // Results are appended via appendMessage which handles keeping last 5 searches
                         renderMessageContent(botPlaceholder, responses[0]);
                         if (responses.length > 1) {
                             responses.slice(1).forEach(item => {
                                 const extraMessage = appendMessage('bot', '');
+                                extraMessage.setAttribute('data-request-id', requestId);
                                 renderMessageContent(extraMessage, item);
                             });
                         }
@@ -2480,40 +2519,14 @@
 
         // Display store folders when no store is selected
         // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
-        function displayStoreFolders(stores) {
-            // Keep last 5 searches (10 messages: 5 user queries + 5 bot responses) and all store folders
-            const allMessages = searchResults.querySelectorAll('.message');
-            const allStoreFolders = searchResults.querySelectorAll('.store-folder');
-            const itemsToKeep = [];
+        function displayStoreFolders(stores, requestId) {
+            // Find the query element for this requestId to insert results right after it
+            const queryElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
             
-            // Keep all store folders from previous searches
-            allStoreFolders.forEach(folder => {
-                itemsToKeep.push(folder.cloneNode(true));
-            });
-            
-            // Get last 10 messages (5 queries + 5 responses)
-            if (allMessages.length > 10) {
-                for (let i = allMessages.length - 10; i < allMessages.length; i++) {
-                    itemsToKeep.push(allMessages[i].cloneNode(true));
-                }
-            } else {
-                // Keep all existing messages
-                allMessages.forEach(msg => itemsToKeep.push(msg.cloneNode(true)));
-            }
-            
-            // Remove placeholder from items to keep if it exists
-            const placeholderIndex = itemsToKeep.findIndex(item => item.classList && item.classList.contains('typing-dots'));
-            if (placeholderIndex !== -1) {
-                itemsToKeep.splice(placeholderIndex, 1);
-            }
-            
-            clearEmptyState();
-            searchResults.innerHTML = '';
-            
-            // Restore kept items
-            itemsToKeep.forEach(item => {
-                searchResults.appendChild(item);
-            });
+            // Create container for store folders
+            const foldersContainer = document.createElement('div');
+            foldersContainer.className = 'store-folders-container';
+            foldersContainer.setAttribute('data-request-id', requestId);
             
             let currentStore = null;
             const storesList = [];
@@ -2571,15 +2584,76 @@
                     ${formattedResult ? `<div class="store-folder-text">${formattedResult}</div>` : ''}
                 `;
                 
-                storeFolder.addEventListener('click', function() {
-                    // Navigate to store detail page with all images
-                    showStoreDetailPage(storeGroup);
-                });
+                // Store storeGroup data in data attribute for event delegation
+                storeFolder.setAttribute('data-store-name', storeGroup.store_name || '');
+                storeFolder.setAttribute('data-request-id', requestId);
                 
-                searchResults.appendChild(storeFolder);
+                foldersContainer.appendChild(storeFolder);
             });
             
+            // Insert folders container right after the query that triggered it (maintains chronological order)
+            if (queryElement && queryElement.parentNode) {
+                // Insert right after the query element
+                if (queryElement.nextSibling) {
+                    queryElement.parentNode.insertBefore(foldersContainer, queryElement.nextSibling);
+                } else {
+                    queryElement.parentNode.appendChild(foldersContainer);
+                }
+            } else {
+                // Fallback: append to end if query not found
+                searchResults.appendChild(foldersContainer);
+            }
+            
+            // Clean up old items (keep last 5 searches = 10 items: 5 queries + 5 results)
+            cleanupOldItems();
+            
             scrollToBottom();
+        }
+        
+        // Clean up old items while maintaining chronological order
+        function cleanupOldItems() {
+            const allItems = Array.from(searchResults.children);
+            const requestIds = new Set();
+            
+            // Collect all requestIds from messages and folder containers
+            allItems.forEach(item => {
+                const requestId = item.getAttribute('data-request-id');
+                if (requestId) {
+                    requestIds.add(requestId);
+                }
+            });
+            
+            // Only cleanup if we have requestIds (new system)
+            // For backward compatibility, if no requestIds exist, use old cleanup logic
+            if (requestIds.size === 0) {
+                // Old cleanup: keep last 10 messages
+                const allMessages = searchResults.querySelectorAll('.message');
+                if (allMessages.length > 10) {
+                    const messagesToRemove = allMessages.length - 10;
+                    for (let i = 0; i < messagesToRemove; i++) {
+                        allMessages[i].remove();
+                    }
+                }
+                return;
+            }
+            
+            // Keep only last 5 requestIds (5 searches = 5 queries + 5 results)
+            const requestIdArray = Array.from(requestIds).sort(); // Sort to maintain order
+            if (requestIdArray.length > 5) {
+                const idsToRemove = requestIdArray.slice(0, requestIdArray.length - 5);
+                
+                // Remove items with old requestIds (both messages and folder containers)
+                allItems.forEach(item => {
+                    const requestId = item.getAttribute('data-request-id');
+                    if (requestId && idsToRemove.includes(requestId)) {
+                        item.remove();
+                        // Clean up store folder data
+                        if (storeFolderDataMap.has(requestId)) {
+                            storeFolderDataMap.delete(requestId);
+                        }
+                    }
+                });
+            }
         }
         
         // Show store detail page
