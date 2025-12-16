@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>جواهری ستارزاده - طلا و جواهرات</title>
+    <title>zarpuy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1436,14 +1436,14 @@
             <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                 <div class="store-selector">
                     <button class="store-selector-btn" id="storeSelectorBtn">
-                        انتخاب مغازه
+                        همه مغازه ها
                     </button>
                     <div class="store-dropdown" id="storeDropdown">
-                        <div class="store-option" data-store="">انتخاب مغازه</div>
+                        <div class="store-option" data-store="">همه مغازه ها</div>
+                        <div class="store-option" data-store="جواهری دژگان">جواهری دژگان</div>
                         <div class="store-option" data-store="جواهری ستارزاده">جواهری ستارزاده</div>
                         <div class="store-option" data-store="فروشگاه ۱">فروشگاه ۱</div>
                         <div class="store-option" data-store="فروشگاه ۲">فروشگاه ۲</div>
-                        <div class="store-option" data-store="جواهری دژگان">جواهری دژگان</div>
                     </div>
                 </div>
             </div>
@@ -1885,7 +1885,7 @@
         }
 
         // Store list
-        const stores = ['جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲', 'جواهری دژگان'];
+        const stores = ['جواهری دژگان', 'جواهری ستارزاده', 'فروشگاه ۱', 'فروشگاه ۲' ];
         let selectedStore = ''; // No store selected by default
         
         // Store folder data map: requestId -> stores array (for event delegation)
@@ -2047,7 +2047,7 @@
         storeDropdown.querySelectorAll('.store-option').forEach(option => {
             option.addEventListener('click', function() {
                 selectedStore = this.getAttribute('data-store');
-                const displayText = selectedStore || 'انتخاب مغازه';
+                const displayText = selectedStore || 'همه مغازه ها';
                 storeSelectorBtn.textContent = displayText;
                 storeDropdown.classList.remove('show');
             });
