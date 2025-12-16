@@ -2031,17 +2031,29 @@
 
             searchResults.appendChild(messageEl);
             
-            // Keep only last 2 queries and responses (4 messages total: 2 user + 2 bot)
-            // But if we're showing store folders, don't limit
+            // Keep last 5 searches (10 messages total: 5 user queries + 5 bot responses)
+            // But if we're showing store folders, keep all folders and limit messages
             const allMessages = searchResults.querySelectorAll('.message');
             const storeFolders = searchResults.querySelectorAll('.store-folder');
             
-            // Only limit if we have messages (not store folders)
-            if (storeFolders.length === 0 && allMessages.length > 4) {
-                // Remove oldest messages, keep last 4 (2 queries + 2 responses)
-                const messagesToRemove = allMessages.length - 4;
-                for (let i = 0; i < messagesToRemove; i++) {
-                    allMessages[i].remove();
+            // If we have store folders, keep all folders and limit messages to last 10
+            if (storeFolders.length > 0) {
+                if (allMessages.length > 10) {
+                    const messagesToRemove = allMessages.length - 10;
+                    for (let i = 0; i < messagesToRemove; i++) {
+                        // Don't remove store folders
+                        if (!allMessages[i].classList.contains('store-folder')) {
+                            allMessages[i].remove();
+                        }
+                    }
+                }
+            } else {
+                // No store folders, just limit messages to last 10 (5 searches)
+                if (allMessages.length > 10) {
+                    const messagesToRemove = allMessages.length - 10;
+                    for (let i = 0; i < messagesToRemove; i++) {
+                        allMessages[i].remove();
+                    }
                 }
             }
             
@@ -2438,6 +2450,7 @@
                         }
                     } else {
                         // Normal response handling when store is selected
+                        // Results are appended via appendMessage which handles keeping last 5 searches
                         renderMessageContent(botPlaceholder, responses[0]);
                         if (responses.length > 1) {
                             responses.slice(1).forEach(item => {
@@ -2468,26 +2481,38 @@
         // Display store folders when no store is selected
         // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
         function displayStoreFolders(stores) {
-            // Keep last 2 queries and responses before clearing
+            // Keep last 5 searches (10 messages: 5 user queries + 5 bot responses) and all store folders
             const allMessages = searchResults.querySelectorAll('.message');
-            const messagesToKeep = [];
+            const allStoreFolders = searchResults.querySelectorAll('.store-folder');
+            const itemsToKeep = [];
             
-            // Get last 4 messages (2 user queries + 2 bot responses)
-            if (allMessages.length > 4) {
-                for (let i = allMessages.length - 4; i < allMessages.length; i++) {
-                    messagesToKeep.push(allMessages[i].cloneNode(true));
+            // Keep all store folders from previous searches
+            allStoreFolders.forEach(folder => {
+                itemsToKeep.push(folder.cloneNode(true));
+            });
+            
+            // Get last 10 messages (5 queries + 5 responses)
+            if (allMessages.length > 10) {
+                for (let i = allMessages.length - 10; i < allMessages.length; i++) {
+                    itemsToKeep.push(allMessages[i].cloneNode(true));
                 }
             } else {
                 // Keep all existing messages
-                allMessages.forEach(msg => messagesToKeep.push(msg.cloneNode(true)));
+                allMessages.forEach(msg => itemsToKeep.push(msg.cloneNode(true)));
+            }
+            
+            // Remove placeholder from items to keep if it exists
+            const placeholderIndex = itemsToKeep.findIndex(item => item.classList && item.classList.contains('typing-dots'));
+            if (placeholderIndex !== -1) {
+                itemsToKeep.splice(placeholderIndex, 1);
             }
             
             clearEmptyState();
             searchResults.innerHTML = '';
             
-            // Restore kept messages
-            messagesToKeep.forEach(msg => {
-                searchResults.appendChild(msg);
+            // Restore kept items
+            itemsToKeep.forEach(item => {
+                searchResults.appendChild(item);
             });
             
             let currentStore = null;
