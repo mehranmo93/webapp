@@ -2151,12 +2151,23 @@
             return figure;
         }
 
-        function createLocationContent({ latitude, longitude, text }) {
+        function createLocationContent({ latitude, longitude, text, ادرس }) {
             const container = document.createElement('div');
             container.className = 'message-location';
 
             const description = document.createElement('div');
             description.textContent = text || 'موقعیت فروشگاه';
+
+            // Display address text (ادرس) if available
+            if (ادرس) {
+                const addressDiv = document.createElement('div');
+                addressDiv.style.cssText = 'margin-top: 8px; margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; font-size: 14px; color: #333; line-height: 1.5;';
+                addressDiv.textContent = ادرس;
+                container.appendChild(description);
+                container.appendChild(addressDiv);
+            } else {
+                container.appendChild(description);
+            }
 
             const link = document.createElement('a');
             link.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
@@ -2168,7 +2179,6 @@
             coords.className = 'location-coords';
             coords.textContent = `${latitude}, ${longitude}`;
 
-            container.appendChild(description);
             container.appendChild(coords);
             container.appendChild(link);
 
@@ -2299,7 +2309,8 @@
                         type: 'location',
                         latitude: raw.latitude || raw.lat,
                         longitude: raw.longitude || raw.lng || raw.lon,
-                        text: raw.text || raw.caption || raw.description || ''
+                        text: raw.text || raw.caption || raw.description || '',
+                        ادرس: raw.ادرس || raw.address || ''
                     }];
                 }
 
@@ -2803,7 +2814,45 @@
                         return null;
                     }
                     
+                    // Helper function to extract address text from various response structures
+                    function extractAddressText(data) {
+                        // Check direct properties
+                        if (data.ادرس) return data.ادرس;
+                        if (data.address) return data.address;
+                        if (data.text) return data.text;
+                        
+                        // Check nested structures
+                        if (data.data) {
+                            const nested = extractAddressText(data.data);
+                            if (nested) return nested;
+                        }
+                        if (data.result) {
+                            const nested = extractAddressText(data.result);
+                            if (nested) return nested;
+                        }
+                        if (data.response) {
+                            const nested = extractAddressText(data.response);
+                            if (nested) return nested;
+                        }
+                        
+                        // Check if data is an array
+                        if (Array.isArray(data) && data.length > 0) {
+                            return extractAddressText(data[0]);
+                        }
+                        
+                        return null;
+                    }
+                    
                     const coords = extractCoordinates(responseData);
+                    const addressText = extractAddressText(responseData);
+                    
+                    // Display address text if available
+                    if (addressText) {
+                        storeDetailAddressText.textContent = addressText;
+                        storeDetailAddressContainer.style.display = 'block';
+                    } else {
+                        storeDetailAddressContainer.style.display = 'none';
+                    }
                     
                     if (coords && coords.latitude && coords.longitude) {
                         // Validate coordinates are numbers
@@ -2811,13 +2860,24 @@
                         const lng = parseFloat(coords.longitude);
                         
                         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                            // Create location content with Google Maps link
+                            const locationContent = createLocationContent({
+                                latitude: lat,
+                                longitude: lng,
+                                text: addressText || 'موقعیت فروشگاه'
+                            });
+                            storeDetailAddressLocation.innerHTML = '';
+                            storeDetailAddressLocation.appendChild(locationContent);
+                            
                             // Open Google Maps with coordinates from backend
                             openGoogleMaps(lat, lng);
                         } else {
                             alert('مختصات جغرافیایی نامعتبر است');
                         }
                     } else {
-                        alert('مختصات جغرافیایی در دسترس نیست');
+                        if (!addressText) {
+                            alert('مختصات جغرافیایی در دسترس نیست');
+                        }
                     }
                 } catch (error) {
                     console.error('Address error:', error);
