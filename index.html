@@ -1724,7 +1724,7 @@
                 </div>
                 <div class="admin-form-group">
                     <label class="admin-form-label" for="goldCode">کد طلا</label>
-                    <input type="text" class="admin-form-input" id="goldCode" required />
+                    <input type="text" class="admin-form-input" id="goldCode" />
                 </div>
                 <div class="admin-form-group">
                     <label class="admin-form-label" for="productDescription">توضیحات محصول</label>
@@ -4048,8 +4048,8 @@
                 const productDescription = document.getElementById('productDescription').value.trim();
                 const imageFile = imageInput ? imageInput.files[0] : null;
 
-                if (!goldCode || !productDescription) {
-                    alert('لطفاً کد طلا و توضیحات محصول را وارد کنید');
+                if (!productDescription) {
+                    alert('لطفاً توضیحات محصول را وارد کنید');
                     return;
                 }
 
@@ -4087,7 +4087,7 @@
                             action: 'add_product',
                             token: token,
                             username: username,
-                            goldCode: goldCode,
+                            goldCode: goldCode || null,
                             productDescription: productDescription,
                             image: imageBase64,
                             timestamp: new Date().toISOString()
