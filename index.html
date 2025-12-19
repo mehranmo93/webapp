@@ -67,6 +67,7 @@
         }
 
         .header-admin-mode .store-selector,
+        .header-admin-mode .city-selector,
         .header-admin-mode .address-btn,
         .header-admin-mode .menu-btn {
             display: none;
@@ -88,7 +89,7 @@
 
         .header-admin-btn {
             flex: 1;
-            padding: 16px;
+            padding: 0 24px;
             border: none;
             border-radius: 14px;
             font-size: 15px;
@@ -96,12 +97,14 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
-            min-height: 52px;
+            height: 48px;
+            min-width: 160px;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: var(--shadow-sm);
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
 
         .header-admin-btn:active {
@@ -1777,7 +1780,7 @@
                     <input type="text" class="admin-form-input" id="goldCode" />
                 </div>
                 <div class="admin-form-group">
-                    <label class="admin-form-label" for="productDescription">توضیحات محصول</label>
+                    <label class="admin-form-label" for="productDescription">توضیحات محصول شامل نوع (دستبند، ...) وزن طلا و کارمزدآن</label>
                     <input type="text" class="admin-form-input" id="productDescription" required />
                 </div>
                 <button type="submit" class="admin-send-btn" id="addSubmitBtn">
@@ -3835,59 +3838,68 @@
             supportModal.classList.add('show');
         });
 
-        headerProductsBtn.addEventListener('click', async function() {
-            // 10 محصول آخر - trigger webhook and display images
-            if (!requireAuth()) return;
-            
-            try {
-                const token = getToken();
-                const username = getUsername();
+        if (headerProductsBtn) {
+            headerProductsBtn.addEventListener('click', async function() {
+                // 10 محصول آخر - trigger webhook and display images
+                if (!requireAuth()) return;
                 
-                if (!token) {
-                    alert('لطفاً ابتدا وارد شوید');
-                    return;
-                }
+                let loadingMessage = null;
                 
-                // Show loading state
-                clearEmptyState();
-                const loadingMessage = appendMessage('bot', 'در حال بارگذاری محصولات...', { isPending: true });
-                
-                const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'last_products',
-                        token: token,
-                        username: username,
-                        timestamp: new Date().toISOString()
-                    })
-                });
-                
-                // Remove loading message
-                if (loadingMessage) {
-                    loadingMessage.remove();
-                }
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
-                        clearToken();
-                        requireAuth();
+                try {
+                    const token = getToken();
+                    const username = getUsername();
+                    
+                    if (!token) {
+                        alert('لطفاً ابتدا وارد شوید');
                         return;
                     }
-                    throw new Error('خطا در دریافت اطلاعات');
-                }
+                    
+                    // Show loading state
+                    clearEmptyState();
+                    loadingMessage = appendMessage('bot', 'در حال بررسی ...', { isPending: true });
+                    
+                    const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'last_products',
+                            token: token,
+                            username: username,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        // Remove loading message before handling error
+                        if (loadingMessage) {
+                            loadingMessage.remove();
+                            loadingMessage = null;
+                        }
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                            clearToken();
+                            requireAuth();
+                            return;
+                        }
+                        throw new Error('خطا در دریافت اطلاعات');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Remove loading message after receiving successful response
+                    if (loadingMessage) {
+                        loadingMessage.remove();
+                        loadingMessage = null;
+                    }
                 
-                const data = await response.json();
-                
-                // Display images with captions
+                // Display images with text beneath each image
                 if (data && Array.isArray(data) && data.length > 0) {
                     // If response is an array of images
                     data.forEach(item => {
                         const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.title || item.name || item.description || '';
+                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
                         
                         if (imageUrl) {
                             const imageContent = createImageContent({ url: imageUrl, caption: caption });
@@ -3898,7 +3910,7 @@
                     // If response has items array
                     data.items.forEach(item => {
                         const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.title || item.name || item.description || '';
+                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
                         
                         if (imageUrl) {
                             const imageContent = createImageContent({ url: imageUrl, caption: caption });
@@ -3909,7 +3921,7 @@
                     // If response has images array
                     data.images.forEach(item => {
                         const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.title || item.name || item.description || '';
+                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
                         
                         if (imageUrl) {
                             const imageContent = createImageContent({ url: imageUrl, caption: caption });
@@ -3919,7 +3931,7 @@
                 } else if (data.url || data.image || data.image_url || data.photo) {
                     // Single image response
                     const imageUrl = data.url || data.image || data.image_url || data.photo;
-                    const caption = data.caption || data.title || data.name || data.description || '';
+                    const caption = data.caption || data.text || data.info || data.title || data.name || data.description || '';
                     const imageContent = createImageContent({ url: imageUrl, caption: caption });
                     appendMessage('bot', imageContent);
                 } else {
@@ -3932,9 +3944,17 @@
                 
             } catch (error) {
                 console.error('Last products error:', error);
+                // Remove loading message if it still exists
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                    loadingMessage = null;
+                }
                 appendMessage('bot', 'خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.');
             }
-        });
+            });
+        } else {
+            console.error('headerProductsBtn not found');
+        }
 
         updatePricesBtn.addEventListener('click', async function() {
             // آپدیت قیمت ها - trigger webhook
