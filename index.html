@@ -1780,7 +1780,7 @@
                     <input type="text" class="admin-form-input" id="goldCode" />
                 </div>
                 <div class="admin-form-group">
-                    <label class="admin-form-label" for="productDescription">توضیحات محصول شامل نوع (دستبند، ...) وزن طلا و کارمزدآن</label>
+                    <label class="admin-form-label" for="productDescription">توضیحات محصول شامل نوع (دستبند، ...)، مدل، نوع طلا (رز گلد ...)، وزن طلا و کارمزد آن</label>
                     <input type="text" class="admin-form-input" id="productDescription" required />
                 </div>
                 <button type="submit" class="admin-send-btn" id="addSubmitBtn">
@@ -2243,7 +2243,10 @@
             searchResults.appendChild(messageEl);
             
             // Cleanup is handled by cleanupOldItems() which maintains chronological order
-            cleanupOldItems();
+            // Skip cleanup if this is a loading message to prevent it from being removed
+            if (!options.isPending) {
+                cleanupOldItems();
+            }
             
             scrollToBottom();
 
@@ -2795,8 +2798,10 @@
             // Only cleanup if we have requestIds (new system)
             // For backward compatibility, if no requestIds exist, use old cleanup logic
             if (requestIds.size === 0) {
-                // Old cleanup: keep last 10 messages
-                const allMessages = searchResults.querySelectorAll('.message');
+                // Old cleanup: keep last 10 messages, but never remove loading messages
+                const allMessages = Array.from(searchResults.querySelectorAll('.message')).filter(msg => 
+                    !msg.hasAttribute('data-loading-message')
+                );
                 if (allMessages.length > 10) {
                     const messagesToRemove = allMessages.length - 10;
                     for (let i = 0; i < messagesToRemove; i++) {
@@ -2812,7 +2817,12 @@
                 const idsToRemove = requestIdArray.slice(0, requestIdArray.length - 5);
                 
                 // Remove items with old requestIds (both messages and folder containers)
+                // But never remove loading messages
                 allItems.forEach(item => {
+                    // Skip loading messages
+                    if (item.hasAttribute('data-loading-message')) {
+                        return;
+                    }
                     const requestId = item.getAttribute('data-request-id');
                     if (requestId && idsToRemove.includes(requestId)) {
                         item.remove();
@@ -3854,9 +3864,26 @@
                         return;
                     }
                     
-                    // Show loading state
+                    // Show loading state - ensure main content area is visible
+                    mainContentArea.style.display = 'block';
                     clearEmptyState();
                     loadingMessage = appendMessage('bot', 'در حال بررسی ...', { isPending: true });
+                    
+                    // Mark this message so it doesn't get cleaned up
+                    if (loadingMessage) {
+                        loadingMessage.setAttribute('data-loading-message', 'true');
+                    }
+                    
+                    // Force browser to render the loading message before starting fetch
+                    // This ensures the message is visible to the user
+                    await new Promise(resolve => {
+                        // Force a reflow to ensure the message is rendered
+                        if (loadingMessage) {
+                            void loadingMessage.offsetHeight;
+                        }
+                        scrollToBottom();
+                        setTimeout(resolve, 150);
+                    });
                     
                     const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
                         method: 'POST',
@@ -3887,12 +3914,6 @@
                     }
                     
                     const data = await response.json();
-                    
-                    // Remove loading message after receiving successful response
-                    if (loadingMessage) {
-                        loadingMessage.remove();
-                        loadingMessage = null;
-                    }
                 
                 // Display images with text beneath each image
                 if (data && Array.isArray(data) && data.length > 0) {
@@ -3937,6 +3958,12 @@
                 } else {
                     // No images found
                     appendMessage('bot', 'محصولی یافت نشد.');
+                }
+                
+                // Remove loading message after displaying all images
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                    loadingMessage = null;
                 }
                 
                 // Ensure main content area is visible
