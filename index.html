@@ -862,6 +862,92 @@
             cursor: not-allowed;
         }
 
+        .contact-info-section {
+            background: linear-gradient(135deg, var(--gold-light) 0%, rgba(212, 175, 55, 0.1) 100%);
+            border: 2px solid var(--gold-light);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .contact-info-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--black-primary);
+            margin-bottom: 16px;
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .contact-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .contact-info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: var(--white);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .contact-info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-info-icon {
+            font-size: 18px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .contact-info-content {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            direction: ltr;
+            text-align: left;
+            word-break: break-all;
+        }
+
+        .contact-info-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .contact-info-value {
+            font-size: 13px;
+            color: var(--black-primary);
+            font-weight: 600;
+        }
+
+        .contact-info-item a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .contact-info-item a:hover .contact-info-value {
+            color: var(--gold-primary);
+        }
+
+        @media (max-width: 480px) {
+            .contact-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .gold-price-container {
             padding: 16px 0;
         }
@@ -1581,6 +1667,39 @@
         <div class="modal-content">
             <div class="modal-header">ارتباط با ما</div>
             <div class="modal-body">
+                <div class="contact-info-section">
+                    <div class="contact-info-title">اطلاعات تماس</div>
+                    <div class="contact-info-grid">
+                        <a href="tel:09014483290" class="contact-info-item">
+                            <div class="contact-info-icon">📞</div>
+                            <div class="contact-info-content">
+                                <div class="contact-info-label">شماره تماس</div>
+                                <div class="contact-info-value">09014483290</div>
+                            </div>
+                        </a>
+                        <a href="mailto:iranzarpuy@gmail.com" class="contact-info-item">
+                            <div class="contact-info-icon">✉️</div>
+                            <div class="contact-info-content">
+                                <div class="contact-info-label">ایمیل</div>
+                                <div class="contact-info-value">iranzarpuy@gmail.com</div>
+                            </div>
+                        </a>
+                        <a href="https://instagram.com/zar.puy" target="_blank" rel="noopener noreferrer" class="contact-info-item">
+                            <div class="contact-info-icon">📷</div>
+                            <div class="contact-info-content">
+                                <div class="contact-info-label">اینستاگرام</div>
+                                <div class="contact-info-value">@zar.puy</div>
+                            </div>
+                        </a>
+                        <a href="https://t.me/+98" target="_blank" rel="noopener noreferrer" class="contact-info-item">
+                            <div class="contact-info-icon">✈️</div>
+                            <div class="contact-info-content">
+                                <div class="contact-info-label">تلگرام</div>
+                                <div class="contact-info-value">+98</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
                 <form id="contactForm">
                     <div class="form-group">
                         <label class="form-label" for="contactName">نام</label>
@@ -1731,6 +1850,9 @@
         <div class="modal-content">
             <div class="modal-header">پشتیبانی</div>
             <div class="modal-body">
+                <div class="contact-info-section" style="margin-bottom: 20px;">
+                    <div class="contact-info-title" style="font-size: 14px; margin-bottom: 12px; padding-bottom: 8px;">تماس با ما: <a href="tel:09014483290" style="color: var(--gold-primary); text-decoration: none; font-weight: 700;">09014483290</a></div>
+                </div>
                 <form id="supportForm">
                     <div class="form-group">
                         <label class="form-label" for="supportText">متن</label>
