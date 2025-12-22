@@ -1413,6 +1413,24 @@
             border-color: #0077b3;
         }
 
+        .admin-form-input::placeholder {
+            color: #999;
+            opacity: 1;
+        }
+
+        .admin-form-input::-webkit-input-placeholder {
+            color: #999;
+        }
+
+        .admin-form-input::-moz-placeholder {
+            color: #999;
+            opacity: 1;
+        }
+
+        .admin-form-input:-ms-input-placeholder {
+            color: #999;
+        }
+
         .image-upload-area {
             margin-top: 8px;
         }
@@ -1944,7 +1962,7 @@
                 </div>
                 <div class="admin-form-group">
                     <label class="admin-form-label" for="productDescription">توضیحات محصول شامل نوع (دستبند، ...)، مدل، نوع طلا (رز گلد ...)، وزن طلا و کارمزد آن</label>
-                    <input type="text" class="admin-form-input" id="productDescription" required />
+                    <input type="text" class="admin-form-input" id="productDescription" placeholder="دستبند مدل تیفانی، وزن 4.57، کارمزد 13" required />
                 </div>
                 <button type="submit" class="admin-send-btn" id="addSubmitBtn">
                     <span class="send-icon">↑</span>
