@@ -1014,6 +1014,40 @@
             display: flex;
         }
 
+        .admin-help-text {
+            padding: 40px 20px;
+            margin: 20px 0;
+            text-align: right;
+        }
+
+        .admin-help-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: #999;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .admin-help-list li {
+            margin-bottom: 16px;
+            padding-right: 24px;
+            position: relative;
+        }
+
+        .admin-help-list li::before {
+            content: '•';
+            position: absolute;
+            right: 0;
+            color: #999;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .admin-help-list li:last-child {
+            margin-bottom: 0;
+        }
+
         .admin-buttons-top {
             display: none;
         }
@@ -1787,6 +1821,13 @@
     <!-- Admin Dashboard -->
     <div class="admin-dashboard" id="adminDashboard">
         <div class="admin-buttons-top"></div>
+        <div class="admin-help-text">
+            <ul class="admin-help-list">
+                <li>جهت افزودن محصول جدید به گالری بر روی "افزودن" و جهت حذف یا ادیت آن بر روی "حذف یا ادیت" کلیک کنید</li>
+                <li>پس از افزودن محصولات به گالری میتوانید بر روی "آپدیت قیمت ها" کلیک کنید تا قیمت ها با توجه به وزن طلا و کارمزد اپدیت شوند</li>
+                <li>برای مشاهده 10 محصول آخر اضافه شده بر روی "10 محصول آخر" کلیک کنید</li>
+            </ul>
+        </div>
         <div class="admin-buttons-bottom">
             <button class="admin-btn admin-btn-update" id="updatePricesBtn">آپدیت قیمت ها</button>
             <div class="admin-buttons-row">
