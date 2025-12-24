@@ -1411,6 +1411,10 @@
             font-size: 14px;
         }
 
+        .delete-edit-loading .micro-progress-container {
+            padding: 30px 20px;
+        }
+
         .delete-edit-empty {
             text-align: center;
             padding: 40px 20px;
@@ -1574,6 +1578,60 @@
                 opacity: 0;
                 transform: translate(-50%, -50%) scale(0.8);
             }
+        }
+
+        /* Micro Progress Indicator */
+        .micro-progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            gap: 24px;
+        }
+
+        .micro-progress-bar {
+            width: 100%;
+            max-width: 300px;
+            height: 4px;
+            background-color: var(--gray-light);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .micro-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+            border-radius: 2px;
+            animation: progressFill 7s ease-out forwards;
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+        }
+
+        @keyframes progressFill {
+            0% {
+                width: 0%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        .micro-progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--gray-dark);
+            line-height: 1.8;
+            padding: 0 10px;
+            max-width: 400px;
+        }
+
+        .micro-progress-text .prefix {
+            font-weight: 600;
+            color: var(--gold-dark);
+            margin-bottom: 4px;
+            display: block;
         }
 
         .image-upload-area {
@@ -2559,6 +2617,63 @@
             searchResults.scrollTop = searchResults.scrollHeight;
         }
 
+        // Persian sentences array
+        const goldFacts = [
+            'تمام طلایی که تاکنون در جهان استخراج شده، در یک مکعب با ضلع حدود ۲۲ متر جا می‌شود.',
+            'طلا هرگز زنگ نمی‌زند، فاسد نمی‌شود و خورده نمی‌شود.',
+            'یک گرم طلا را می‌توان به سیمی به طول حدود ۲ کیلومتر کشید.',
+            'طلا آن‌قدر نرم است که می‌توان با دندان روی آن اثر گذاشت.',
+            'در آب دریا طلا وجود دارد، اما مقدار آن آن‌قدر کم است که استخراجش صرفه اقتصادی ندارد.',
+            'تقریباً تمام طلای موجود روی زمین از انفجار ستاره‌ها به وجود آمده است.',
+            'اتم‌های طلای زیورآلات ما قدیمی‌تر از خود زمین هستند.',
+            'طلا خوراکی است و در برخی غذاهای لوکس استفاده می‌شود.',
+            'طلا رسانای برق بهتری از مس است، اما به دلیل قیمت بالا کمتر استفاده می‌شود.',
+            'رومی‌های باستان از طلا برای دندان‌پزشکی استفاده می‌کردند.',
+            'اولین سکه‌های طلا بیش از ۲۶۰۰ سال پیش ساخته شدند.',
+            'در دوره‌هایی از تاریخ، طلا ارزشمندتر از زمین بوده است.',
+            'در قرون وسطی، پودر طلا به‌عنوان دارو مصرف می‌شد.',
+            'انسان‌ها به‌طور غریزی جذب رنگ طلایی می‌شوند.',
+            'طلا یکی از کم‌واکنش‌ترین عناصر شیمیایی است.',
+            'ترکیب کمیابی و ماندگاری طلا باعث شده انسان‌ها به آن اعتماد کنند.'
+        ];
+
+        // Function to get random sentence
+        function getRandomGoldFact() {
+            const randomIndex = Math.floor(Math.random() * goldFacts.length);
+            return goldFacts[randomIndex];
+        }
+
+        // Function to create micro-progress indicator HTML
+        function createMicroProgressIndicator() {
+            const container = document.createElement('div');
+            container.className = 'micro-progress-container';
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'micro-progress-bar';
+            
+            const progressFill = document.createElement('div');
+            progressFill.className = 'micro-progress-fill';
+            progressBar.appendChild(progressFill);
+            
+            const textContainer = document.createElement('div');
+            textContainer.className = 'micro-progress-text';
+            
+            const prefix = document.createElement('span');
+            prefix.className = 'prefix';
+            prefix.textContent = 'فکت طلایی :';
+            
+            const fact = document.createElement('span');
+            fact.textContent = getRandomGoldFact();
+            
+            textContainer.appendChild(prefix);
+            textContainer.appendChild(fact);
+            
+            container.appendChild(progressBar);
+            container.appendChild(textContainer);
+            
+            return container;
+        }
+
         function appendMessage(role, content, options = {}) {
             clearEmptyState();
 
@@ -2959,8 +3074,9 @@
             const userMessageEl = appendMessage('user', query);
             userMessageEl.setAttribute('data-request-id', requestId);
 
-            // Show pending message and proceed (send to backend even if no store selected)
-            const botPlaceholder = appendMessage('bot', 'در حال دریافت پاسخ...', { isPending: true });
+            // Show pending message with micro-progress indicator
+            const progressIndicator = createMicroProgressIndicator();
+            const botPlaceholder = appendMessage('bot', progressIndicator, { isPending: true });
             botPlaceholder.setAttribute('data-request-id', requestId);
             setSearchState(true);
 
@@ -4986,7 +5102,9 @@
                 deleteEditSubmitBtn.disabled = true;
                 deleteEditSubmitBtn.innerHTML = '<span class="send-icon">⏳</span>';
                 deleteEditResults.style.display = 'block';
-                deleteEditResults.innerHTML = '<div class="delete-edit-loading">در حال جستجو...</div>';
+                const progressIndicator = createMicroProgressIndicator();
+                deleteEditResults.innerHTML = '';
+                deleteEditResults.appendChild(progressIndicator);
                 deleteEditActions.style.display = 'none';
 
                 try {
