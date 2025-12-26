@@ -1834,10 +1834,11 @@
                 </div>
                 <div class="city-selector">
                     <button class="city-selector-btn" id="citySelectorBtn">
-                        جستوجو شهر
+                        همه شهرها
                     </button>
                     <div class="store-dropdown" id="cityDropdown">
                         <input type="text" id="citySearchInput" placeholder="جستجوی شهر..." style="padding: 8px; margin: 8px; border: 1px solid var(--gold-light); border-radius: 8px; width: calc(100% - 16px);" />
+                        <div class="store-option" data-city="">همه شهرها</div>
                         <div class="store-option" data-city="آمل">آمل</div>
                         <div class="store-option" data-city="بابل">بابل</div>
                         <div class="store-option" data-city="آنلاین">آنلاین</div>
@@ -2220,21 +2221,47 @@
         const cityData = {
             'آمل': {
                 stores: ['جواهری دژگان', 'جواهری ستارزاده', 'جواهری محمدی'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b'
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/770eb30a-288a-41fc-9d2d-501860b1de3a'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/770eb30a-288a-41fc-9d2d-501860b1de3a'
             },
             'آنلاین': {
                 stores: ['طلاسو'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/053e875b-1a42-4d6a-9670-8289076dac38'
             }
         };
         
+        // Function to find city by store name
+        function findCityByStore(storeName) {
+            if (!storeName || storeName === '') {
+                return null;
+            }
+            for (const [city, data] of Object.entries(cityData)) {
+                if (data.stores.includes(storeName)) {
+                    return city;
+                }
+            }
+            return null;
+        }
+        
+        // Function to get webhook URL based on city
+        function getWebhookUrlByCity(city) {
+            if (!city || city === '') {
+                // Default URL for "همه شهرها" or no city selected
+                return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+            }
+            if (cityData[city] && cityData[city].webhookUrl) {
+                return cityData[city].webhookUrl;
+            }
+            // Default URL for any other city
+            return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+        }
+        
         let selectedCity = null; // No city selected by default
-        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'; // Default URL
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
@@ -2496,9 +2523,10 @@
 
         // Function to update store list based on selected city
         function updateStoreList(city) {
-            if (city && cityData[city]) {
+            if (city && city !== '' && cityData[city]) {
+                // Show only stores for the selected city
                 stores = cityData[city].stores;
-                WEBHOOK_URL = cityData[city].webhookUrl;
+                WEBHOOK_URL = getWebhookUrlByCity(city);
                 
                 // Update store dropdown
                 storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
@@ -2514,12 +2542,12 @@
                 selectedStore = '';
                 storeSelectorBtn.textContent = 'همه مغازه ها';
             } else {
-                // No city selected - show all stores from all cities
+                // No city selected or "همه شهرها" - show all stores from all cities
                 stores = [];
                 Object.values(cityData).forEach(cityInfo => {
                     stores.push(...cityInfo.stores);
                 });
-                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
                 
                 // Update store dropdown
                 storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
@@ -2540,9 +2568,33 @@
         function attachStoreOptionListeners() {
         storeDropdown.querySelectorAll('.store-option').forEach(option => {
             option.addEventListener('click', function() {
-                selectedStore = this.getAttribute('data-store');
-                    const displayText = selectedStore || 'همه مغازه ها';
-                storeSelectorBtn.textContent = displayText;
+                const clickedStore = this.getAttribute('data-store');
+                
+                // If a store is selected, automatically set the city
+                if (clickedStore && clickedStore !== '') {
+                    const cityForStore = findCityByStore(clickedStore);
+                    if (cityForStore && cityForStore !== selectedCity) {
+                        // City needs to change - update city first
+                        selectedCity = cityForStore;
+                        citySelectorBtn.textContent = cityForStore;
+                        // Update store list to show only stores from the new city
+                        updateStoreList(cityForStore);
+                        // After store list is updated, set the selected store
+                        selectedStore = clickedStore;
+                        storeSelectorBtn.textContent = clickedStore;
+                        // Update webhook URL based on city
+                        WEBHOOK_URL = getWebhookUrlByCity(selectedCity);
+                    } else {
+                        // No city change needed, just set the store
+                        selectedStore = clickedStore;
+                        storeSelectorBtn.textContent = clickedStore || 'همه مغازه ها';
+                    }
+                } else {
+                    // "همه مغازه ها" selected
+                    selectedStore = '';
+                    storeSelectorBtn.textContent = 'همه مغازه ها';
+                }
+                
                 storeDropdown.classList.remove('show');
             });
         });
@@ -2561,7 +2613,7 @@
         if (citySearchInput) {
             citySearchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase();
-                const options = cityDropdown.querySelectorAll('.store-option[data-city]');
+                const options = cityDropdown.querySelectorAll('.store-option');
                 options.forEach(option => {
                     const cityName = option.textContent.toLowerCase();
                     if (cityName.includes(searchTerm)) {
@@ -2574,16 +2626,24 @@
         }
         
         // City option selection
-        cityDropdown.querySelectorAll('.store-option[data-city]').forEach(option => {
+        cityDropdown.querySelectorAll('.store-option').forEach(option => {
             option.addEventListener('click', function() {
-                const city = this.getAttribute('data-city');
-                selectedCity = city;
-                citySelectorBtn.textContent = city;
+                const city = this.getAttribute('data-city') || '';
+                if (city === '') {
+                    // "همه شهرها" selected
+                    selectedCity = null;
+                    citySelectorBtn.textContent = 'همه شهرها';
+                } else {
+                    selectedCity = city;
+                    citySelectorBtn.textContent = city;
+                }
                 cityDropdown.classList.remove('show');
                 citySearchInput.value = '';
                 
                 // Update store list and webhook URL
-                updateStoreList(city);
+                updateStoreList(city || null);
+                // Update webhook URL based on selected city
+                WEBHOOK_URL = getWebhookUrlByCity(city || null);
             });
         });
         
@@ -3082,9 +3142,17 @@
 
             const payload = {
                 store: selectedStore,
+                city: selectedCity,
                 query,
                 timestamp: new Date().toISOString()
             };
+            
+            // Update webhook URL based on selected city
+            if (selectedCity) {
+                WEBHOOK_URL = getWebhookUrlByCity(selectedCity);
+            } else {
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+            }
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
