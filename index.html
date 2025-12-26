@@ -2522,7 +2522,7 @@
         });
 
         // Function to update store list based on selected city
-        function updateStoreList(city) {
+        function updateStoreList(city, preserveStoreSelection = false) {
             if (city && city !== '' && cityData[city]) {
                 // Show only stores for the selected city
                 stores = cityData[city].stores;
@@ -2538,9 +2538,24 @@
                     storeDropdown.appendChild(option);
                 });
                 
-                // Reset selected store
-                selectedStore = '';
-                storeSelectorBtn.textContent = 'همه مغازه ها';
+                // Only reset store if we're not preserving the selection, or if current store doesn't belong to this city
+                if (!preserveStoreSelection) {
+                    selectedStore = '';
+                    storeSelectorBtn.textContent = 'همه مغازه ها';
+                } else {
+                    // Check if current selected store belongs to this city
+                    if (selectedStore && selectedStore !== '' && !stores.includes(selectedStore)) {
+                        // Store doesn't belong to this city, reset to "همه مغازه ها"
+                        selectedStore = '';
+                        storeSelectorBtn.textContent = 'همه مغازه ها';
+                    } else if (selectedStore && selectedStore !== '') {
+                        // Store belongs to this city, keep it selected
+                        storeSelectorBtn.textContent = selectedStore;
+                    } else {
+                        // No store was selected, set to "همه مغازه ها"
+                        storeSelectorBtn.textContent = 'همه مغازه ها';
+                    }
+                }
             } else {
                 // No city selected or "همه شهرها" - show all stores from all cities
                 stores = [];
@@ -2558,6 +2573,10 @@
                     option.textContent = store;
                     storeDropdown.appendChild(option);
                 });
+                
+                // When "همه شهرها" is selected, always reset store to "همه مغازه ها"
+                selectedStore = '';
+                storeSelectorBtn.textContent = 'همه مغازه ها';
             }
             
             // Re-attach event listeners to new store options
@@ -2629,21 +2648,28 @@
         cityDropdown.querySelectorAll('.store-option').forEach(option => {
             option.addEventListener('click', function() {
                 const city = this.getAttribute('data-city') || '';
+                const previousCity = selectedCity;
+                
                 if (city === '') {
-                    // "همه شهرها" selected
+                    // "همه شهرها" selected - force reset store to "همه مغازه ها"
                     selectedCity = null;
                     citySelectorBtn.textContent = 'همه شهرها';
+                    // Update store list (will force reset store)
+                    updateStoreList(null, false);
+                    // Update webhook URL
+                    WEBHOOK_URL = getWebhookUrlByCity(null);
                 } else {
+                    // Specific city selected - preserve store selection if it belongs to this city
                     selectedCity = city;
                     citySelectorBtn.textContent = city;
+                    // Update store list and preserve store selection if valid
+                    updateStoreList(city, true);
+                    // Update webhook URL based on selected city
+                    WEBHOOK_URL = getWebhookUrlByCity(city);
                 }
+                
                 cityDropdown.classList.remove('show');
                 citySearchInput.value = '';
-                
-                // Update store list and webhook URL
-                updateStoreList(city || null);
-                // Update webhook URL based on selected city
-                WEBHOOK_URL = getWebhookUrlByCity(city || null);
             });
         });
         
