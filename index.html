@@ -610,6 +610,139 @@
             text-align: center;
         }
 
+        /* Similar Items Section */
+        .similar-items-section {
+            margin-top: 24px;
+            padding: 16px 0;
+        }
+
+        .similar-items-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--black-primary);
+            margin-bottom: 16px;
+            text-align: right;
+            padding: 0 16px;
+        }
+
+        .similar-items-scroll {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            gap: 16px;
+            padding: 0 16px 16px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--gold-primary) var(--gray-light);
+        }
+
+        .similar-items-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .similar-items-scroll::-webkit-scrollbar-track {
+            background: var(--gray-light);
+            border-radius: 4px;
+        }
+
+        .similar-items-scroll::-webkit-scrollbar-thumb {
+            background: var(--gold-primary);
+            border-radius: 4px;
+        }
+
+        .similar-item {
+            min-width: 280px;
+            max-width: 280px;
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--gold-light);
+            display: flex;
+            flex-direction: column;
+            scroll-snap-align: start;
+            transition: all 0.3s ease;
+        }
+
+        .similar-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--gold-primary);
+        }
+
+        .similar-item-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--gold-light);
+            background: linear-gradient(135deg, var(--cream-light) 0%, var(--white) 100%);
+        }
+
+        .similar-item-store-info {
+            flex: 1;
+        }
+
+        .similar-item-store-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--black-primary);
+            margin-bottom: 4px;
+        }
+
+        .similar-item-store-info-text {
+            font-size: 13px;
+            color: var(--gray-dark);
+            line-height: 1.4;
+        }
+
+        .similar-item-map-btn {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+            color: var(--black-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .similar-item-map-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .similar-item-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: var(--gray-light);
+        }
+
+        .similar-item-details {
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .similar-item-info {
+            font-size: 14px;
+            color: var(--gray-dark);
+            line-height: 1.5;
+        }
+
+        .similar-item-price {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gold-dark);
+            text-align: left;
+        }
+
         /* Search Bar */
         .search-bar {
             position: fixed;
@@ -3295,37 +3428,55 @@
             // Find the query element for this requestId to insert results right after it
             const queryElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
             
-            // Create container for store folders
-            const foldersContainer = document.createElement('div');
-            foldersContainer.className = 'store-folders-container';
-            foldersContainer.setAttribute('data-request-id', requestId);
+            // Separate similar items from regular store items
+            const similarItems = [];
+            const regularStores = [];
             
             let currentStore = null;
             const storesList = [];
             
-            // Process items sequentially
+            // First pass: separate similar items and process regular stores
             stores.forEach((item) => {
-                // Check if this item has store_name - it means a new store starts
-                if (item.store_name) {
-                    // Save previous store if exists
-                    if (currentStore) {
-                        storesList.push(currentStore);
-                    }
-                    // Create new store folder
-                    currentStore = {
-                        store_name: item.store_name,
-                        نتیجه: item.نتیجه || item.result || null,
-                        store_info: item.store_info || item.storeInfo || item.info || null,
-                        images: []
-                    };
-                } else if (currentStore) {
-                    // This is an image for the current store
-                    const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                // Check if this is a similar item
+                const simmilarValue = item.simmilar || item.similar;
+                if (simmilarValue === 'موارد مشابه') {
+                    // This is a similar item - extract it
+                    const imageUrl = item.image || item.url || item.image_url || item.photo || '';
                     if (imageUrl) {
-                        currentStore.images.push({
+                        similarItems.push({
                             url: imageUrl,
-                            info: item.info || item.text || item.caption || item.description || ''
+                            info: item.info || item.text || item.caption || item.description || '',
+                            price: item.price || item.قیمت || null,
+                            storeName: item['store name'] || item.store_name || item.storeName || '',
+                            storeInfo: item.store_info || item.storeInfo || '',
+                            latitude: item.latitude || item.lat || null,
+                            longitude: item.longitude || item.lng || item.lon || null
                         });
+                    }
+                } else {
+                    // Regular store item - process normally
+                    // Check if this item has store_name - it means a new store starts
+                    if (item.store_name) {
+                        // Save previous store if exists
+                        if (currentStore) {
+                            storesList.push(currentStore);
+                        }
+                        // Create new store folder
+                        currentStore = {
+                            store_name: item.store_name,
+                            نتیجه: item.نتیجه || item.result || null,
+                            store_info: item.store_info || item.storeInfo || item.info || null,
+                            images: []
+                        };
+                    } else if (currentStore) {
+                        // This is an image for the current store
+                        const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                        if (imageUrl) {
+                            currentStore.images.push({
+                                url: imageUrl,
+                                info: item.info || item.text || item.caption || item.description || ''
+                            });
+                        }
                     }
                 }
             });
@@ -3335,7 +3486,12 @@
                 storesList.push(currentStore);
             }
             
-            // Create folders for each store
+            // Create container for store folders
+            const foldersContainer = document.createElement('div');
+            foldersContainer.className = 'store-folders-container';
+            foldersContainer.setAttribute('data-request-id', requestId);
+            
+            // Create folders for each store (regular stores)
             storesList.forEach((storeGroup) => {
                 const storeFolder = document.createElement('div');
                 storeFolder.className = 'store-folder';
@@ -3374,6 +3530,105 @@
             } else {
                 // Fallback: append to end if query not found
                 searchResults.appendChild(foldersContainer);
+            }
+            
+            // Add similar items section if there are any similar items
+            if (similarItems.length > 0) {
+                const similarSection = document.createElement('div');
+                similarSection.className = 'similar-items-section';
+                similarSection.setAttribute('data-request-id', requestId);
+                
+                const title = document.createElement('div');
+                title.className = 'similar-items-title';
+                title.textContent = 'موارد مشابه';
+                similarSection.appendChild(title);
+                
+                const scrollContainer = document.createElement('div');
+                scrollContainer.className = 'similar-items-scroll';
+                
+                similarItems.forEach((item) => {
+                    const similarItem = document.createElement('div');
+                    similarItem.className = 'similar-item';
+                    
+                    // Header with store info and map button
+                    const header = document.createElement('div');
+                    header.className = 'similar-item-header';
+                    
+                    const storeInfoDiv = document.createElement('div');
+                    storeInfoDiv.className = 'similar-item-store-info';
+                    
+                    if (item.storeName) {
+                        const storeNameDiv = document.createElement('div');
+                        storeNameDiv.className = 'similar-item-store-name';
+                        storeNameDiv.textContent = item.storeName;
+                        storeInfoDiv.appendChild(storeNameDiv);
+                    }
+                    
+                    if (item.storeInfo) {
+                        const storeInfoText = document.createElement('div');
+                        storeInfoText.className = 'similar-item-store-info-text';
+                        storeInfoText.textContent = item.storeInfo;
+                        storeInfoDiv.appendChild(storeInfoText);
+                    }
+                    
+                    header.appendChild(storeInfoDiv);
+                    
+                    // Add نقشه button if coordinates are available
+                    if (item.latitude && item.longitude) {
+                        const mapBtn = document.createElement('button');
+                        mapBtn.className = 'similar-item-map-btn';
+                        mapBtn.textContent = 'نقشه';
+                        mapBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            window.open(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`, '_blank');
+                        });
+                        header.appendChild(mapBtn);
+                    }
+                    
+                    similarItem.appendChild(header);
+                    
+                    // Image
+                    const image = document.createElement('img');
+                    image.src = item.url;
+                    image.alt = item.storeName || 'تصویر';
+                    image.className = 'similar-item-image';
+                    image.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                    similarItem.appendChild(image);
+                    
+                    // Details (info and price)
+                    const details = document.createElement('div');
+                    details.className = 'similar-item-details';
+                    
+                    if (item.info) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'similar-item-info';
+                        infoDiv.textContent = item.info;
+                        details.appendChild(infoDiv);
+                    }
+                    
+                    if (item.price) {
+                        const priceDiv = document.createElement('div');
+                        priceDiv.className = 'similar-item-price';
+                        // Format price with commas
+                        const formattedPrice = item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                        priceDiv.textContent = `${formattedPrice} تومان`;
+                        details.appendChild(priceDiv);
+                    }
+                    
+                    similarItem.appendChild(details);
+                    scrollContainer.appendChild(similarItem);
+                });
+                
+                similarSection.appendChild(scrollContainer);
+                
+                // Insert similar section after folders container
+                if (foldersContainer.nextSibling) {
+                    foldersContainer.parentNode.insertBefore(similarSection, foldersContainer.nextSibling);
+                } else {
+                    foldersContainer.parentNode.appendChild(similarSection);
+                }
             }
             
             // Clean up old items (keep last 5 searches = 10 items: 5 queries + 5 results)
