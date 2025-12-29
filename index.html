@@ -2616,42 +2616,59 @@
             const requestId = folder.getAttribute('data-request-id');
             const storeName = folder.getAttribute('data-store-name');
             
-            if (!requestId || !storeFolderDataMap.has(requestId)) return;
+            if (!requestId || !storeName) return;
             
-            const storesArray = storeFolderDataMap.get(requestId);
-            
-            // Reconstruct the storeGroup from storesArray
-            let currentStore = null;
-            const storesList = [];
-            
-            storesArray.forEach((item) => {
-                if (item.store_name) {
-                    if (currentStore) {
-                        storesList.push(currentStore);
+            // Try to get store data using the new key format
+            const mapKey = `${requestId}_${storeName}`;
+            if (!storeFolderDataMap.has(mapKey)) {
+                // Fallback to old format for backward compatibility
+                if (!storeFolderDataMap.has(requestId)) return;
+                const storesArray = storeFolderDataMap.get(requestId);
+                // Old format handling
+                let currentStore = null;
+                const storesList = [];
+                storesArray.forEach((item) => {
+                    if (item.store_name) {
+                        if (currentStore) {
+                            storesList.push(currentStore);
+                        }
+                        currentStore = {
+                            store_name: item.store_name,
+                            نتیجه: item.نتیجه || item.result || null,
+                            store_info: item.store_info || item.storeInfo || item.info || null,
+                            images: []
+                        };
+                    } else if (currentStore) {
+                        const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                        if (imageUrl) {
+                            currentStore.images.push({
+                                url: imageUrl,
+                                info: item.info || item.text || item.caption || item.description || ''
+                            });
+                        }
                     }
-                    currentStore = {
-                        store_name: item.store_name,
-                        نتیجه: item.نتیجه || item.result || null,
-                        store_info: item.store_info || item.storeInfo || item.info || null,
-                        images: []
-                    };
-                } else if (currentStore) {
-                    const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
-                    if (imageUrl) {
-                        currentStore.images.push({
-                            url: imageUrl,
-                            info: item.info || item.text || item.caption || item.description || ''
-                        });
-                    }
+                });
+                if (currentStore) {
+                    storesList.push(currentStore);
                 }
-            });
-            if (currentStore) {
-                storesList.push(currentStore);
+                const storeGroup = storesList.find(s => s.store_name === storeName);
+                if (storeGroup) {
+                    showStoreDetailPage(storeGroup);
+                }
+                return;
             }
             
-            // Find the matching storeGroup
-            const storeGroup = storesList.find(s => s.store_name === storeName);
-            if (storeGroup) {
+            // New format: get the store data directly
+            const storesArray = storeFolderDataMap.get(mapKey);
+            if (storesArray && storesArray.length > 0) {
+                const storeData = storesArray[0];
+                // Convert to format expected by showStoreDetailPage
+                const storeGroup = {
+                    store_name: storeData.store_name,
+                    نتیجه: storeData.نتیجه,
+                    store_info: storeData.store_info,
+                    images: storeData.images || []
+                };
                 showStoreDetailPage(storeGroup);
             }
         });
@@ -3423,69 +3440,146 @@
             }
         });
 
-        // Display store folders when no store is selected
-        // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
-        function displayStoreFolders(stores, requestId) {
-            // Find the query element for this requestId to insert results right after it
-            const queryElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
-            
-            // Separate similar items from regular store items
+        // Helper function to normalize store name (handles "store_name" vs "store name")
+        function getStoreName(item) {
+            return item['store name'] || item.store_name || item.storeName || '';
+        }
+        
+        // Helper function to normalize store info
+        function getStoreInfo(item) {
+            return item.store_info || item.storeInfo || '';
+        }
+        
+        // Helper function to check if simmilar is "موارد مشابه"
+        function isSimilarItem(item) {
+            const simmilarValue = item.simmilar !== undefined ? item.simmilar : (item.similar !== undefined ? item.similar : undefined);
+            const normalized = typeof simmilarValue === 'string' ? simmilarValue.trim() : simmilarValue;
+            return normalized === 'موارد مشابه';
+        }
+        
+        // Helper function to check if item should be skipped (currently no items are skipped)
+        // Items with simmilar === "undefiend" (typo) should still appear in store folders
+        // Only items with simmilar === "موارد مشابه" go to similar section
+        function shouldSkipItem(item) {
+            // Don't skip anything here - "undefiend" items go to store folders
+            return false;
+        }
+        
+        // Helper function to check if item is a summary object (has store_name and نتیجه with "مورد در")
+        function isSummaryObject(item) {
+            const storeName = getStoreName(item);
+            const result = item.نتیجه || item.result || '';
+            return storeName && typeof result === 'string' && result.includes('مورد در');
+        }
+        
+        // Helper function to check if item is a status object (just {"نتیجه":"false"})
+        function isStatusObject(item) {
+            const keys = Object.keys(item);
+            return keys.length === 1 && keys[0] === 'نتیجه' && (item.نتیجه === 'false' || item.نتیجه === false);
+        }
+        
+        // Transform webhook response into clean structure
+        function transformWebhookResponse(items) {
+            const storesMap = new Map(); // storeName -> store object
             const similarItems = [];
-            const regularStores = [];
             
-            let currentStore = null;
-            const storesList = [];
-            
-            // First pass: separate similar items and process regular stores
-            stores.forEach((item) => {
+            items.forEach((item) => {
+                // Skip status objects like {"نتیجه":"false"}
+                if (isStatusObject(item)) {
+                    return;
+                }
+                
+                // Handle summary objects FIRST (store headers) - before any other checks
+                // This ensures store folders are created even if all items are skipped
+                if (isSummaryObject(item)) {
+                    const storeName = getStoreName(item);
+                    if (storeName) {
+                        if (!storesMap.has(storeName)) {
+                            storesMap.set(storeName, {
+                                storeName: storeName,
+                                storeInfo: getStoreInfo(item),
+                                summary: {
+                                    resultText: item.نتیجه || item.result || '',
+                                    message: item.message || ''
+                                },
+                                items: []
+                            });
+                        } else {
+                            // Update summary if store already exists
+                            const store = storesMap.get(storeName);
+                            store.summary = {
+                                resultText: item.نتیجه || item.result || '',
+                                message: item.message || ''
+                            };
+                            if (!store.storeInfo && getStoreInfo(item)) {
+                                store.storeInfo = getStoreInfo(item);
+                            }
+                        }
+                    }
+                    return; // Summary objects are not product items
+                }
+                
                 // Check if this is a similar item
-                const simmilarValue = item.simmilar || item.similar;
-                if (simmilarValue === 'موارد مشابه') {
-                    // This is a similar item - extract it
+                if (isSimilarItem(item)) {
                     const imageUrl = item.image || item.url || item.image_url || item.photo || '';
                     if (imageUrl) {
                         similarItems.push({
                             url: imageUrl,
                             info: item.info || item.text || item.caption || item.description || '',
                             price: item.price || item.قیمت || null,
-                            storeName: item['store name'] || item.store_name || item.storeName || '',
-                            storeInfo: item.store_info || item.storeInfo || '',
+                            storeName: getStoreName(item),
+                            storeInfo: getStoreInfo(item),
                             latitude: item.latitude || item.lat || null,
                             longitude: item.longitude || item.lng || item.lon || null
                         });
                     }
-                } else {
-                    // Regular store item - process normally
-                    // Check if this item has store_name - it means a new store starts
-                    if (item.store_name) {
-                        // Save previous store if exists
-                        if (currentStore) {
-                            storesList.push(currentStore);
-                        }
-                        // Create new store folder
-                        currentStore = {
-                            store_name: item.store_name,
-                            نتیجه: item.نتیجه || item.result || null,
-                            store_info: item.store_info || item.storeInfo || item.info || null,
-                            images: []
-                        };
-                    } else if (currentStore) {
-                        // This is an image for the current store
-                        const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
-                        if (imageUrl) {
-                            currentStore.images.push({
-                                url: imageUrl,
-                                info: item.info || item.text || item.caption || item.description || ''
+                    return; // Skip processing for store folders
+                }
+                
+                // Handle product items (images with url)
+                // Items with simmilar === "undefiend" (typo) or undefined/missing go to store folders
+                // Only items with simmilar === "موارد مشابه" have already been handled above
+                const imageUrl = item.image || item.url || item.image_url || item.photo || '';
+                if (imageUrl) {
+                    const storeName = getStoreName(item);
+                    
+                    // Add all items with images to store folders (unless they're similar items)
+                    if (storeName) {
+                        if (!storesMap.has(storeName)) {
+                            // Create store entry even without summary
+                            storesMap.set(storeName, {
+                                storeName: storeName,
+                                storeInfo: getStoreInfo(item),
+                                summary: null,
+                                items: []
                             });
                         }
+                        const store = storesMap.get(storeName);
+                        store.items.push({
+                            url: imageUrl,
+                            info: item.info || item.text || item.caption || item.description || '',
+                            price: item.price || item.قیمت || null
+                        });
                     }
                 }
             });
             
-            // Don't forget the last store
-            if (currentStore) {
-                storesList.push(currentStore);
-            }
+            return {
+                stores: Array.from(storesMap.values()),
+                similar: similarItems
+            };
+        }
+        
+        // Display store folders when no store is selected
+        // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
+        function displayStoreFolders(stores, requestId) {
+            // Find the query element for this requestId to insert results right after it
+            const queryElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
+            
+            // Transform the raw array into clean structure
+            const transformed = transformWebhookResponse(stores);
+            const storesList = transformed.stores;
+            const similarItems = transformed.similar;
             
             // Create container for store folders
             const foldersContainer = document.createElement('div');
@@ -3493,28 +3587,49 @@
             foldersContainer.setAttribute('data-request-id', requestId);
             
             // Create folders for each store (regular stores)
-            storesList.forEach((storeGroup) => {
+            // Only show stores that have items OR a summary
+            storesList.forEach((storeData) => {
+                // Skip stores with no items and no summary (shouldn't happen, but safety check)
+                if (storeData.items.length === 0 && !storeData.summary) {
+                    return;
+                }
+                
                 const storeFolder = document.createElement('div');
                 storeFolder.className = 'store-folder';
                 
                 // Use the first image as the folder preview
-                const previewImage = storeGroup.images.length > 0 ? storeGroup.images[0].url : '';
+                const previewImage = storeData.items.length > 0 ? storeData.items[0].url : '';
                 
                 // Format نتیجه text: make numbers bigger, bold, green and fancy
                 let formattedResult = '';
-                if (storeGroup.نتیجه) {
+                if (storeData.summary && storeData.summary.resultText) {
                     // Match pattern: number followed by text (e.g., "4 مورد در جواهری مهران یافت شد")
-                    formattedResult = storeGroup.نتیجه.replace(/(\d+)/g, '<span style="font-weight: bold; color: #22c55e; font-size: 1.3em; text-shadow: 0 2px 4px rgba(34, 197, 94, 0.3); display: inline-block; transform: scale(1.1);">$1</span>');
+                    formattedResult = storeData.summary.resultText.replace(/(\d+)/g, '<span style="font-weight: bold; color: #22c55e; font-size: 1.3em; text-shadow: 0 2px 4px rgba(34, 197, 94, 0.3); display: inline-block; transform: scale(1.1);">$1</span>');
                 }
                 
                 storeFolder.innerHTML = `
-                    ${previewImage ? `<img src="${previewImage}" alt="${storeGroup.store_name}" class="store-folder-image" onerror="this.style.display='none';" />` : '<div class="store-folder-image" style="background: var(--gold-light); display: flex; align-items: center; justify-content: center; font-size: 48px;">📁</div>'}
-                    <div class="store-folder-name">${storeGroup.store_name}</div>
+                    ${previewImage ? `<img src="${previewImage}" alt="${storeData.storeName}" class="store-folder-image" onerror="this.style.display='none';" />` : '<div class="store-folder-image" style="background: var(--gold-light); display: flex; align-items: center; justify-content: center; font-size: 48px;">📁</div>'}
+                    <div class="store-folder-name">${storeData.storeName}</div>
                     ${formattedResult ? `<div class="store-folder-text">${formattedResult}</div>` : ''}
                 `;
                 
-                // Store storeGroup data in data attribute for event delegation
-                storeFolder.setAttribute('data-store-name', storeGroup.store_name || '');
+                // Store storeData in data attribute for event delegation
+                // Convert storeData back to the format expected by the click handler
+                // The click handler expects an array format with store_name and images
+                const storeDataForMap = {
+                    store_name: storeData.storeName,
+                    نتیجه: storeData.summary ? storeData.summary.resultText : null,
+                    store_info: storeData.storeInfo || null,
+                    images: storeData.items.map(item => ({
+                        url: item.url,
+                        info: item.info || ''
+                    }))
+                };
+                // Store with a unique key that includes requestId and storeName
+                const mapKey = `${requestId}_${storeData.storeName}`;
+                storeFolderDataMap.set(mapKey, [storeDataForMap]);
+                
+                storeFolder.setAttribute('data-store-name', storeData.storeName || '');
                 storeFolder.setAttribute('data-request-id', requestId);
                 
                 foldersContainer.appendChild(storeFolder);
