@@ -718,8 +718,9 @@
 
         .similar-item-image {
             width: 100%;
-            height: 200px;
-            object-fit: cover;
+            height: auto;
+            max-height: none;
+            object-fit: contain;
             background-color: var(--gray-light);
         }
 
@@ -3573,17 +3574,111 @@
                     
                     header.appendChild(storeInfoDiv);
                     
-                    // Add نقشه button if coordinates are available
-                    if (item.latitude && item.longitude) {
-                        const mapBtn = document.createElement('button');
-                        mapBtn.className = 'similar-item-map-btn';
-                        mapBtn.textContent = 'نقشه';
-                        mapBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            window.open(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`, '_blank');
-                        });
-                        header.appendChild(mapBtn);
-                    }
+                    // Always add نقشه button - fetch coordinates on click
+                    const mapBtn = document.createElement('button');
+                    mapBtn.className = 'similar-item-map-btn';
+                    mapBtn.textContent = 'نقشه';
+                    mapBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        
+                        // Disable button while loading
+                        mapBtn.disabled = true;
+                        const originalText = mapBtn.textContent;
+                        mapBtn.textContent = '...';
+                        
+                        try {
+                            // POST to webhook to get coordinates
+                            const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    action: 'address',
+                                    store_name: item.storeName,
+                                    timestamp: new Date().toISOString()
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error('خطا در دریافت آدرس');
+                            }
+                            
+                            const responseData = await response.json();
+                            
+                            // Helper function to extract coordinates from various response structures
+                            function extractCoordinates(data) {
+                                // If data is an array, check first item
+                                if (Array.isArray(data) && data.length > 0) {
+                                    return extractCoordinates(data[0]);
+                                }
+                                
+                                // Check direct properties
+                                if (data.latitude && data.longitude) {
+                                    return { latitude: data.latitude, longitude: data.longitude };
+                                }
+                                if (data.lat && data.lng) {
+                                    return { latitude: data.lat, longitude: data.lng };
+                                }
+                                if (data.lat && data.lon) {
+                                    return { latitude: data.lat, longitude: data.lon };
+                                }
+                                
+                                // Check nested structures
+                                if (data.data) {
+                                    const nested = extractCoordinates(data.data);
+                                    if (nested) return nested;
+                                }
+                                if (data.result) {
+                                    const nested = extractCoordinates(data.result);
+                                    if (nested) return nested;
+                                }
+                                if (data.response) {
+                                    const nested = extractCoordinates(data.response);
+                                    if (nested) return nested;
+                                }
+                                if (data.location) {
+                                    const nested = extractCoordinates(data.location);
+                                    if (nested) return nested;
+                                }
+                                
+                                // Check common array keys
+                                const arrayKeys = ['items', 'results', 'data', 'locations'];
+                                for (const key of arrayKeys) {
+                                    if (Array.isArray(data[key]) && data[key].length > 0) {
+                                        const nested = extractCoordinates(data[key][0]);
+                                        if (nested) return nested;
+                                    }
+                                }
+                                
+                                return null;
+                            }
+                            
+                            const coords = extractCoordinates(responseData);
+                            
+                            if (coords && coords.latitude && coords.longitude) {
+                                // Validate coordinates are numbers
+                                const lat = parseFloat(coords.latitude);
+                                const lng = parseFloat(coords.longitude);
+                                
+                                if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                                    // Open Google Maps with coordinates
+                                    openGoogleMaps(lat, lng);
+                                } else {
+                                    alert('مختصات جغرافیایی نامعتبر است');
+                                }
+                            } else {
+                                alert('مختصات جغرافیایی در دسترس نیست');
+                            }
+                        } catch (error) {
+                            console.error('Map button error:', error);
+                            alert('خطا در دریافت آدرس. لطفاً دوباره تلاش کنید.');
+                        } finally {
+                            mapBtn.disabled = false;
+                            mapBtn.textContent = originalText;
+                        }
+                    });
+                    header.appendChild(mapBtn);
                     
                     similarItem.appendChild(header);
                     
