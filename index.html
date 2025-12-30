@@ -2527,6 +2527,146 @@
         const searchResults = document.getElementById('searchResults');
         const addressModal = document.getElementById('addressModal');
         const modalAddress = document.getElementById('modalAddress');
+        
+        // Scroll position restoration state
+        let savedScrollState = {
+            windowScrollY: null,
+            windowScrollX: null,
+            containerScrollTop: null,
+            containerScrollLeft: null
+        };
+        
+        // Helper function to get the main scroll container
+        function getMainScrollContainer() {
+            // Check if searchResults is scrollable
+            if (searchResults && (searchResults.scrollHeight > searchResults.clientHeight || 
+                searchResults.scrollWidth > searchResults.clientWidth)) {
+                return searchResults;
+            }
+            // Check if mainContentArea is scrollable
+            if (mainContentArea && (mainContentArea.scrollHeight > mainContentArea.clientHeight || 
+                mainContentArea.scrollWidth > mainContentArea.clientWidth)) {
+                return mainContentArea;
+            }
+            // Default to window
+            return null;
+        }
+        
+        // Save main page scroll position
+        function saveMainScroll() {
+            const container = getMainScrollContainer();
+            
+            // Save window scroll
+            savedScrollState.windowScrollY = window.scrollY || window.pageYOffset || 0;
+            savedScrollState.windowScrollX = window.scrollX || window.pageXOffset || 0;
+            
+            // Save container scroll if it exists
+            if (container) {
+                savedScrollState.containerScrollTop = container.scrollTop || 0;
+                savedScrollState.containerScrollLeft = container.scrollLeft || 0;
+            } else {
+                savedScrollState.containerScrollTop = null;
+                savedScrollState.containerScrollLeft = null;
+            }
+            
+            // Also save to sessionStorage for persistence across page refreshes
+            try {
+                sessionStorage.setItem('mainScrollY', savedScrollState.windowScrollY.toString());
+                sessionStorage.setItem('mainScrollX', savedScrollState.windowScrollX.toString());
+                if (savedScrollState.containerScrollTop !== null) {
+                    sessionStorage.setItem('mainContainerScrollTop', savedScrollState.containerScrollTop.toString());
+                    sessionStorage.setItem('mainContainerScrollLeft', savedScrollState.containerScrollLeft.toString());
+                } else {
+                    sessionStorage.removeItem('mainContainerScrollTop');
+                    sessionStorage.removeItem('mainContainerScrollLeft');
+                }
+            } catch (e) {
+                // sessionStorage might not be available, ignore
+                console.warn('Could not save scroll position to sessionStorage:', e);
+            }
+        }
+        
+        // Restore main page scroll position
+        function restoreMainScroll(retryCount = 0) {
+            const maxRetries = 5;
+            
+            // Try to restore from sessionStorage first (for page refresh scenarios)
+            if (savedScrollState.windowScrollY === null) {
+                try {
+                    const savedY = sessionStorage.getItem('mainScrollY');
+                    const savedX = sessionStorage.getItem('mainScrollX');
+                    const savedContainerTop = sessionStorage.getItem('mainContainerScrollTop');
+                    const savedContainerLeft = sessionStorage.getItem('mainContainerScrollLeft');
+                    
+                    if (savedY !== null) {
+                        savedScrollState.windowScrollY = parseInt(savedY, 10) || 0;
+                        savedScrollState.windowScrollX = parseInt(savedX, 10) || 0;
+                        if (savedContainerTop !== null) {
+                            savedScrollState.containerScrollTop = parseInt(savedContainerTop, 10) || 0;
+                            savedScrollState.containerScrollLeft = parseInt(savedContainerLeft, 10) || 0;
+                        }
+                    }
+                } catch (e) {
+                    // sessionStorage might not be available, ignore
+                }
+            }
+            
+            // If no saved state, do nothing
+            if (savedScrollState.windowScrollY === null && savedScrollState.containerScrollTop === null) {
+                return;
+            }
+            
+            // Wait for layout to be ready
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const container = getMainScrollContainer();
+                    
+                    // Restore window scroll
+                    if (savedScrollState.windowScrollY !== null) {
+                        const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+                        const maxScrollX = Math.max(0, document.documentElement.scrollWidth - window.innerWidth);
+                        const targetY = Math.min(savedScrollState.windowScrollY, maxScrollY);
+                        const targetX = Math.min(savedScrollState.windowScrollX, maxScrollX);
+                        
+                        window.scrollTo(targetX, targetY);
+                    }
+                    
+                    // Restore container scroll if it exists
+                    if (container && savedScrollState.containerScrollTop !== null) {
+                        const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+                        const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+                        const targetTop = Math.min(savedScrollState.containerScrollTop, maxScrollTop);
+                        const targetLeft = Math.min(savedScrollState.containerScrollLeft, maxScrollLeft);
+                        
+                        container.scrollTop = targetTop;
+                        container.scrollLeft = targetLeft;
+                        
+                        // Verify restoration worked, retry if needed
+                        if (retryCount < maxRetries && 
+                            (Math.abs(container.scrollTop - targetTop) > 1 || 
+                             Math.abs(container.scrollLeft - targetLeft) > 1)) {
+                            setTimeout(() => restoreMainScroll(retryCount + 1), 50);
+                            return;
+                        }
+                    }
+                    
+                    // Verify window scroll restoration, retry if needed
+                    if (retryCount < maxRetries && savedScrollState.windowScrollY !== null) {
+                        const currentY = window.scrollY || window.pageYOffset || 0;
+                        const currentX = window.scrollX || window.pageXOffset || 0;
+                        const targetY = Math.min(savedScrollState.windowScrollY, 
+                            Math.max(0, document.documentElement.scrollHeight - window.innerHeight));
+                        const targetX = Math.min(savedScrollState.windowScrollX, 
+                            Math.max(0, document.documentElement.scrollWidth - window.innerWidth));
+                        
+                        if (Math.abs(currentY - targetY) > 1 || Math.abs(currentX - targetX) > 1) {
+                            setTimeout(() => restoreMainScroll(retryCount + 1), 50);
+                            return;
+                        }
+                    }
+                });
+            });
+        }
         const closeModalBtn = document.getElementById('closeModalBtn');
         const viewMapBtn = document.getElementById('viewMapBtn');
         
@@ -2623,36 +2763,36 @@
             if (!storeFolderDataMap.has(mapKey)) {
                 // Fallback to old format for backward compatibility
                 if (!storeFolderDataMap.has(requestId)) return;
-                const storesArray = storeFolderDataMap.get(requestId);
+            const storesArray = storeFolderDataMap.get(requestId);
                 // Old format handling
-                let currentStore = null;
-                const storesList = [];
-                storesArray.forEach((item) => {
-                    if (item.store_name) {
-                        if (currentStore) {
-                            storesList.push(currentStore);
-                        }
-                        currentStore = {
-                            store_name: item.store_name,
-                            نتیجه: item.نتیجه || item.result || null,
-                            store_info: item.store_info || item.storeInfo || item.info || null,
-                            images: []
-                        };
-                    } else if (currentStore) {
-                        const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
-                        if (imageUrl) {
-                            currentStore.images.push({
-                                url: imageUrl,
-                                info: item.info || item.text || item.caption || item.description || ''
-                            });
-                        }
+            let currentStore = null;
+            const storesList = [];
+            storesArray.forEach((item) => {
+                if (item.store_name) {
+                    if (currentStore) {
+                        storesList.push(currentStore);
                     }
-                });
-                if (currentStore) {
-                    storesList.push(currentStore);
+                    currentStore = {
+                        store_name: item.store_name,
+                        نتیجه: item.نتیجه || item.result || null,
+                        store_info: item.store_info || item.storeInfo || item.info || null,
+                        images: []
+                    };
+                } else if (currentStore) {
+                    const imageUrl = item.image || item.url || item.image_url || item.photo || (item.type === 'image' ? item.url : '');
+                    if (imageUrl) {
+                        currentStore.images.push({
+                            url: imageUrl,
+                            info: item.info || item.text || item.caption || item.description || ''
+                        });
+                    }
                 }
-                const storeGroup = storesList.find(s => s.store_name === storeName);
-                if (storeGroup) {
+            });
+            if (currentStore) {
+                storesList.push(currentStore);
+            }
+            const storeGroup = storesList.find(s => s.store_name === storeName);
+            if (storeGroup) {
                     showStoreDetailPage(storeGroup);
                 }
                 return;
@@ -2692,9 +2832,9 @@
                 
                 // Only reset store if we're not preserving the selection, or if current store doesn't belong to this city
                 if (!preserveStoreSelection) {
-                    selectedStore = '';
-                    storeSelectorBtn.textContent = 'همه مغازه ها';
-                } else {
+                selectedStore = '';
+                storeSelectorBtn.textContent = 'همه مغازه ها';
+            } else {
                     // Check if current selected store belongs to this city
                     if (selectedStore && selectedStore !== '' && !stores.includes(selectedStore)) {
                         // Store doesn't belong to this city, reset to "همه مغازه ها"
@@ -2812,8 +2952,8 @@
                     WEBHOOK_URL = getWebhookUrlByCity(null);
                 } else {
                     // Specific city selected - preserve store selection if it belongs to this city
-                    selectedCity = city;
-                    citySelectorBtn.textContent = city;
+                selectedCity = city;
+                citySelectorBtn.textContent = city;
                     // Update store list and preserve store selection if valid
                     updateStoreList(city, true);
                     // Update webhook URL based on selected city
@@ -3902,6 +4042,9 @@
         
         // Show store detail page
         function showStoreDetailPage(storeGroup) {
+            // Save scroll position before navigating to folder view
+            saveMainScroll();
+            
             const storeName = storeGroup.store_name || 'فروشگاه';
             
             currentStoreData = {
@@ -3965,6 +4108,9 @@
                 mainContentArea.style.display = 'block';
                 document.querySelector('.search-bar').style.display = 'flex';
                 backBtn.style.display = 'none';
+                
+                // Restore scroll position after navigating back to main page
+                restoreMainScroll();
             });
         }
         
