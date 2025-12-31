@@ -2356,15 +2356,15 @@
         const cityData = {
             'آمل': {
                 stores: ['جواهری دژگان', 'جواهری ستارزاده', 'جواهری محمدی'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/770eb30a-288a-41fc-9d2d-501860b1de3a'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/770eb30a-288a-41fc-9d2d-501860b1de3a'
             },
             'آنلاین': {
                 stores: ['طلاسو'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/053e875b-1a42-4d6a-9670-8289076dac38'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/053e875b-1a42-4d6a-9670-8289076dac38'
             }
         };
         
@@ -2385,20 +2385,20 @@
         function getWebhookUrlByCity(city) {
             if (!city || city === '') {
                 // Default URL for "همه شهرها" or no city selected
-                return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+                return 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
             }
             if (cityData[city] && cityData[city].webhookUrl) {
                 return cityData[city].webhookUrl;
             }
             // Default URL for any other city
-            return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+            return 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
         }
         
         let selectedCity = null; // No city selected by default
-        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
-        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
+        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
@@ -2854,7 +2854,7 @@
                 Object.values(cityData).forEach(cityInfo => {
                     stores.push(...cityInfo.stores);
                 });
-                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
                 
                 // Update store dropdown
                 storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
@@ -3179,25 +3179,46 @@
             const container = document.createElement('div');
             container.className = 'message-location';
 
-            const description = document.createElement('div');
-            description.textContent = text || 'موقعیت فروشگاه';
+            // Check if text and ادرس are the same to avoid duplication
+            const textValue = text || '';
+            const addressValue = ادرس || '';
+            const isSame = textValue === addressValue;
 
-            // Display address text (ادرس) if available
-            if (ادرس) {
+            // If text and ادرس are the same, only show ادرس (prefer styled addressDiv)
+            if (isSame && addressValue) {
                 const addressDiv = document.createElement('div');
                 addressDiv.style.cssText = 'margin-top: 8px; margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; font-size: 14px; color: #333; line-height: 1.5;';
-                addressDiv.textContent = ادرس;
-                container.appendChild(description);
+                addressDiv.textContent = addressValue;
                 container.appendChild(addressDiv);
             } else {
-                container.appendChild(description);
+                // Show text if it exists and is different from ادرس
+                if (textValue && textValue !== addressValue) {
+                    const description = document.createElement('div');
+                    description.textContent = textValue;
+                    container.appendChild(description);
+                }
+                
+                // Show ادرس if it exists
+                if (addressValue) {
+                    const addressDiv = document.createElement('div');
+                    addressDiv.style.cssText = 'margin-top: 8px; margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; font-size: 14px; color: #333; line-height: 1.5;';
+                    addressDiv.textContent = addressValue;
+                    container.appendChild(addressDiv);
+                }
+                
+                // If neither exists, show default
+                if (!textValue && !addressValue) {
+                    const description = document.createElement('div');
+                    description.textContent = 'موقعیت فروشگاه';
+                    container.appendChild(description);
+                }
             }
 
             const link = document.createElement('a');
             link.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.textContent = 'مشاهده روی نقشه';
+            link.textContent = 'نشان دادن بر روی نقشه';
 
             const coords = document.createElement('div');
             coords.className = 'location-coords';
@@ -3425,9 +3446,22 @@
                 return;
             }
 
-            if (payload.type === 'location' && payload.latitude && payload.longitude) {
-                updateMessage(targetEl, createLocationContent(payload));
-                return;
+            // Check for location type or address with coordinates
+            if ((payload.type === 'location' || (payload.latitude && payload.longitude)) && payload.latitude && payload.longitude) {
+                // Convert to numbers if they're strings
+                const lat = typeof payload.latitude === 'string' ? parseFloat(payload.latitude) : payload.latitude;
+                const lng = typeof payload.longitude === 'string' ? parseFloat(payload.longitude) : payload.longitude;
+                
+                // Validate coordinates are valid numbers
+                if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                    updateMessage(targetEl, createLocationContent({
+                        latitude: lat,
+                        longitude: lng,
+                        text: payload.text || payload.ادرس || 'موقعیت فروشگاه',
+                        ادرس: payload.ادرس || payload.address || ''
+                    }));
+                    return;
+                }
             }
 
             updateMessage(targetEl, createTextContent(payload.text || 'پاسخی دریافت نشد'));
@@ -3469,7 +3503,7 @@
             if (selectedCity) {
                 WEBHOOK_URL = getWebhookUrlByCity(selectedCity);
             } else {
-                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
             }
 
             try {
@@ -3522,44 +3556,414 @@
                             const hasText = firstItem.text || firstItem.result || firstItem.نتیجه || firstItem.caption || firstItem.description;
                             
                             if (hasImage || hasText) {
-                                // Store folder data for this requestId (for event delegation)
-                                storeFolderDataMap.set(requestId, storesArray);
-                                // Remove placeholder before displaying folders
-                                botPlaceholder.remove();
-                                // Display store folders using raw data to preserve all fields
-                                displayStoreFolders(storesArray, requestId);
-                            } else {
-                                // Normal response handling
-                    renderMessageContent(botPlaceholder, responses[0]);
-                    if (responses.length > 1) {
-                        responses.slice(1).forEach(item => {
-                            const extraMessage = appendMessage('bot', '');
-                            extraMessage.setAttribute('data-request-id', requestId);
-                            renderMessageContent(extraMessage, item);
-                        });
+                                // Parse response to separate normal items from similar items
+                                let mainMessageObject = null;
+                                const similarObjects = [];
+                                const normalObjects = [];
+                                
+                                storesArray.forEach((item) => {
+                                    // Skip status objects
+                                    if (isStatusObject(item)) {
+                                        return;
+                                    }
+                                    
+                                    // Check if it's a similar item
+                                    if (isSimilarItem(item)) {
+                                        similarObjects.push(item);
+                                        return;
+                                    }
+                                    
+                                    // Check if it's a summary object (has store_name and نتیجه) - these should go to normalObjects
+                                    // Summary objects are used to show "نتیجه" inside store folders
+                                    if (isSummaryObject(item)) {
+                                        // Summary objects should be included in normalObjects so transformWebhookResponse can process them
+                                        normalObjects.push(item);
+                                        return;
+                                    }
+                                    
+                                    // Check if it's a main message (prefer "message" over "نتیجه" for main message bubble)
+                                    // "نتیجه" will be shown inside store folders, "message" will be shown as main message bubble
+                                    // Main messages should NOT have store_name (summary objects do)
+                                    const hasImage = item.image || item.url || item.image_url || item.photo;
+                                    const hasStoreName = getStoreName(item);
+                                    if (!hasImage && !hasStoreName && !mainMessageObject) {
+                                        const messageText = item.message || '';
+                                        // Prefer "message" field for main message bubble
+                                        if (messageText && typeof messageText === 'string' && messageText.trim()) {
+                                            mainMessageObject = item;
+                                            return;
+                                        }
+                                        // Fallback to "نتیجه" only if "message" doesn't exist AND no store_name
+                                        const resultText = item.نتیجه || item.result || '';
+                                        if (resultText && typeof resultText === 'string' && resultText.trim()) {
+                                            mainMessageObject = item;
+                                            return;
+                                        }
+                                    }
+                                    
+                                    // Everything else is a normal object (including product items)
+                                    normalObjects.push(item);
+                                });
+                                
+                                // Debug log
+                                if (typeof console !== 'undefined' && console.log) {
+                                    console.log('[debug] normalObjects:', normalObjects.length, 'similarObjects:', similarObjects.length, 'hasMessage:', !!mainMessageObject);
                                 }
+                                
+                                // Render main message if available
+                                // Prefer "message" field, fallback to "نتیجه" if message doesn't exist
+                                let messageElement = null;
+                                if (mainMessageObject) {
+                                    const messageText = mainMessageObject.message || '';
+                                    const resultText = mainMessageObject.نتیجه || mainMessageObject.result || '';
+                                    // Prefer "message" for main message bubble
+                                    const mainText = (messageText && typeof messageText === 'string' && messageText.trim()) 
+                                        ? messageText.trim() 
+                                        : (resultText && typeof resultText === 'string' && resultText.trim() ? resultText.trim() : '');
+                                    
+                                    if (mainText) {
+                                        updateMessage(botPlaceholder, createTextContent(mainText));
+                                        messageElement = botPlaceholder; // Keep reference before potentially removing
+                                    }
+                                }
+                                
+                                // Store folder data for this requestId (for event delegation) - only normal objects
+                                storeFolderDataMap.set(requestId, normalObjects);
+                                
+                                // Only remove placeholder if we're not using it as the message element
+                                // If messageElement exists, it's the botPlaceholder, so we keep it in DOM
+                                // Otherwise, remove it before displaying folders
+                                if (!messageElement) {
+                                    botPlaceholder.remove();
+                                }
+                                
+                                // Display store folders using only normal objects (NOT similar objects)
+                                // Pass messageElement as insertAfterElement so folders are inserted after message
+                                const foldersContainer = displayStoreFolders(normalObjects, requestId, messageElement);
+                                
+                                // Determine anchor for similar section: foldersContainer if exists, otherwise messageElement
+                                let anchorForSimilar = foldersContainer || messageElement;
+                                if (!anchorForSimilar) {
+                                    anchorForSimilar = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
+                                }
+                                
+                                // Render similar section AFTER normal folders
+                                // Pass the full storesArray to ensureSimilarSectionRendered so it can extract similar items
+                                ensureSimilarSectionRendered({
+                                    responseArray: storesArray, // Pass full array so it can extract similar items
+                                    requestId: requestId,
+                                    anchorElement: anchorForSimilar
+                                });
+                            } else {
+                                // Normal response handling (no folders)
+                                // Separate similar objects from normal objects
+                                const similarObjects = [];
+                                const normalObjects = [];
+                                
+                                if (Array.isArray(storesArray)) {
+                                    storesArray.forEach((item) => {
+                                        if (isStatusObject(item)) {
+                                            return;
+                                        }
+                                        if (isSimilarItem(item)) {
+                                            similarObjects.push(item);
+                                        } else {
+                                            normalObjects.push(item);
+                                        }
+                                    });
+                                }
+                                
+                                // Render first normal object or first response
+                                if (normalObjects.length > 0) {
+                                    const firstNormal = normalObjects[0];
+                                    // Check if it's a location/address response
+                                    if (firstNormal.latitude && firstNormal.longitude) {
+                                        renderMessageContent(botPlaceholder, firstNormal);
+                                    } else {
+                                        const responseItem = {
+                                            type: (firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo) ? 'image' : 'text',
+                                            url: firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo,
+                                            text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
+                                        };
+                                        renderMessageContent(botPlaceholder, responseItem);
+                                    }
+                                } else {
+                                    renderMessageContent(botPlaceholder, responses[0]);
+                                }
+                                let lastMessageElement = botPlaceholder;
+                                
+                                // Render remaining normal objects (NOT similar objects)
+                                normalObjects.slice(1).forEach(item => {
+                                    const extraMessage = appendMessage('bot', '');
+                                    extraMessage.setAttribute('data-request-id', requestId);
+                                    // Check if it's a location/address response
+                                    if (item.latitude && item.longitude) {
+                                        renderMessageContent(extraMessage, item);
+                                    } else {
+                                        const responseItem = {
+                                            type: (item.image || item.url || item.image_url || item.photo) ? 'image' : 'text',
+                                            url: item.image || item.url || item.image_url || item.photo,
+                                            text: item.info || item.text || item.caption || item.description || ''
+                                        };
+                                        renderMessageContent(extraMessage, responseItem);
+                                    }
+                                    lastMessageElement = extraMessage;
+                                });
+                                
+                                // Find anchor: use message element, fallback to query element
+                                if (!lastMessageElement) {
+                                    lastMessageElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`) || botPlaceholder;
+                                }
+                                
+                                // Ensure similar section is rendered even if no folders
+                                // Similar objects are NEVER rendered as regular messages above
+                                ensureSimilarSectionRendered({
+                                    responseArray: storesArray,
+                                    requestId: requestId,
+                                    anchorElement: lastMessageElement
+                                });
                             }
                         } else {
                             // Normal response handling
-                            renderMessageContent(botPlaceholder, responses[0]);
-                            if (responses.length > 1) {
-                                responses.slice(1).forEach(item => {
+                            // Separate similar objects from normal objects if storesArray exists
+                            if (storesArray && Array.isArray(storesArray)) {
+                                const similarObjects = [];
+                                const normalObjects = [];
+                                
+                                storesArray.forEach((item) => {
+                                    if (isStatusObject(item)) {
+                                        return;
+                                    }
+                                    if (isSimilarItem(item)) {
+                                        similarObjects.push(item);
+                                    } else {
+                                        normalObjects.push(item);
+                                    }
+                                });
+                                
+                                // Render first normal object if any, otherwise use first response
+                                if (normalObjects.length > 0) {
+                                    const firstNormal = normalObjects[0];
+                                    // Check if it's a location/address response
+                                    if (firstNormal.latitude && firstNormal.longitude) {
+                                        renderMessageContent(botPlaceholder, firstNormal);
+                                    } else {
+                                        const responseItem = {
+                                            type: (firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo) ? 'image' : 'text',
+                                            url: firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo,
+                                            text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
+                                        };
+                                        renderMessageContent(botPlaceholder, responseItem);
+                                    }
+                                } else {
+                                    renderMessageContent(botPlaceholder, responses[0]);
+                                }
+                                let lastMessageElement = botPlaceholder;
+                                
+                                // Render remaining normal objects (NOT similar objects)
+                                normalObjects.slice(1).forEach(item => {
                                     const extraMessage = appendMessage('bot', '');
                                     extraMessage.setAttribute('data-request-id', requestId);
-                                    renderMessageContent(extraMessage, item);
+                                    // Check if it's a location/address response
+                                    if (item.latitude && item.longitude) {
+                                        renderMessageContent(extraMessage, item);
+                                    } else {
+                                        const responseItem = {
+                                            type: (item.image || item.url || item.image_url || item.photo) ? 'image' : 'text',
+                                            url: item.image || item.url || item.image_url || item.photo,
+                                            text: item.info || item.text || item.caption || item.description || ''
+                                        };
+                                        renderMessageContent(extraMessage, responseItem);
+                                    }
+                                    lastMessageElement = extraMessage;
+                                });
+                                
+                                // Find anchor: use message element, fallback to query element
+                                if (!lastMessageElement) {
+                                    lastMessageElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`) || botPlaceholder;
+                                }
+                                
+                                // Ensure similar section is rendered
+                                // Similar objects are NEVER rendered as regular messages above
+                                ensureSimilarSectionRendered({
+                                    responseArray: storesArray,
+                                    requestId: requestId,
+                                    anchorElement: lastMessageElement
+                                });
+                            } else {
+                                // No storesArray, use normal response handling
+                                renderMessageContent(botPlaceholder, responses[0]);
+                                let lastMessageElement = botPlaceholder;
+                                
+                                // Filter out similar items before rendering as messages
+                                if (responses.length > 1) {
+                                    responses.slice(1).forEach(item => {
+                                        // Skip similar items - they will be rendered via ensureSimilarSectionRendered
+                                        if (item.simmilar && typeof item.simmilar === 'string' && item.simmilar.trim() === 'موارد مشابه') {
+                                            return;
+                                        }
+                                        if (item.similar && typeof item.similar === 'string' && item.similar.trim() === 'موارد مشابه') {
+                                            return;
+                                        }
+                                        
+                                        const extraMessage = appendMessage('bot', '');
+                                        extraMessage.setAttribute('data-request-id', requestId);
+                                        renderMessageContent(extraMessage, item);
+                                        lastMessageElement = extraMessage;
+                                    });
+                                }
+                                
+                                // Ensure similar section is rendered (will use rawResponseData if available)
+                                ensureSimilarSectionRendered({
+                                    responseArray: rawResponseData || storesArray,
+                                    requestId: requestId,
+                                    anchorElement: lastMessageElement
                                 });
                             }
                         }
                     } else {
-                        // Normal response handling when store is selected
-                        renderMessageContent(botPlaceholder, responses[0]);
-                        if (responses.length > 1) {
-                            responses.slice(1).forEach(item => {
-                                const extraMessage = appendMessage('bot', '');
-                                extraMessage.setAttribute('data-request-id', requestId);
-                                renderMessageContent(extraMessage, item);
+                        // Response handling when store is selected
+                        let messageElement = null;
+                        
+                        if (rawResponseData && Array.isArray(rawResponseData)) {
+                            // Separate response into mainMessageObject, similarObjects, and normalObjects
+                            let mainMessageObject = null;
+                            const similarObjects = [];
+                            const normalObjects = [];
+                            
+                            rawResponseData.forEach((item) => {
+                                // Skip status objects
+                                if (isStatusObject(item)) {
+                                    return;
+                                }
+                                
+                                // Check if it's a similar item
+                                if (isSimilarItem(item)) {
+                                    similarObjects.push(item);
+                                    return;
+                                }
+                                
+                                // Check if it's a summary object (has store_name and نتیجه) - these should go to normalObjects
+                                // Summary objects are used to show "نتیجه" inside store folders
+                                if (isSummaryObject(item)) {
+                                    // Summary objects should be included in normalObjects so transformWebhookResponse can process them
+                                    normalObjects.push(item);
+                                    return;
+                                }
+                                
+                                // Check if it's a main message (prefer "message" over "نتیجه" for main message bubble)
+                                // "نتیجه" will be shown inside store folders, "message" will be shown as main message bubble
+                                // Main messages should NOT have store_name (summary objects do)
+                                const hasImage = item.image || item.url || item.image_url || item.photo;
+                                const hasStoreName = getStoreName(item);
+                                if (!hasImage && !hasStoreName && !mainMessageObject) {
+                                    const messageText = item.message || '';
+                                    // Prefer "message" field for main message bubble
+                                    if (messageText && typeof messageText === 'string' && messageText.trim()) {
+                                        mainMessageObject = item;
+                                        return;
+                                    }
+                                    // Fallback to "نتیجه" only if "message" doesn't exist AND no store_name
+                                    const resultText = item.نتیجه || item.result || '';
+                                    if (resultText && typeof resultText === 'string' && resultText.trim()) {
+                                        mainMessageObject = item;
+                                        return;
+                                    }
+                                }
+                                
+                                // Everything else is a normal object (including product items)
+                                normalObjects.push(item);
                             });
+                            
+                            // Debug log
+                            if (typeof console !== 'undefined' && console.log) {
+                                console.log('[debug] normalObjects:', normalObjects.length, 'similarObjects:', similarObjects.length, 'hasMessage:', !!mainMessageObject);
+                            }
+                            
+                            // Render main message if available
+                            // Prefer "message" field, fallback to "نتیجه" if message doesn't exist
+                            if (mainMessageObject) {
+                                const messageText = mainMessageObject.message || '';
+                                const resultText = mainMessageObject.نتیجه || mainMessageObject.result || '';
+                                // Prefer "message" for main message bubble
+                                const mainText = (messageText && typeof messageText === 'string' && messageText.trim()) 
+                                    ? messageText.trim() 
+                                    : (resultText && typeof resultText === 'string' && resultText.trim() ? resultText.trim() : '');
+                                
+                                if (mainText) {
+                                    updateMessage(botPlaceholder, createTextContent(mainText));
+                                    messageElement = botPlaceholder;
+                                }
+                            }
+                            
+                            // If no main message, fallback to first response
+                            if (!messageElement) {
+                                if (responses[0]) {
+                                    renderMessageContent(botPlaceholder, responses[0]);
+                                    messageElement = botPlaceholder;
+                                }
+                            }
+                            
+                            // Render normal objects (NOT similar objects) as regular messages if any
+                            // But only if they're not already handled by the main message
+                            normalObjects.forEach((item, index) => {
+                                // Skip if this is the main message object (already rendered)
+                                if (item === mainMessageObject) {
+                                    return;
+                                }
+                                
+                                // Only render items that have images/url (product items)
+                                const hasImage = item.image || item.url || item.image_url || item.photo;
+                                if (hasImage) {
+                                    const extraMessage = appendMessage('bot', '');
+                                    extraMessage.setAttribute('data-request-id', requestId);
+                                    // Convert item to response format for renderMessageContent
+                                    const responseItem = {
+                                        type: 'image',
+                                        url: item.image || item.url || item.image_url || item.photo,
+                                        text: item.info || item.text || item.caption || item.description || ''
+                                    };
+                                    renderMessageContent(extraMessage, responseItem);
+                                    messageElement = extraMessage;
+                                }
+                            });
+                            
+                            // Find anchor: use message element, fallback to query element
+                            if (!messageElement) {
+                                messageElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`) || botPlaceholder;
+                            }
+                        } else {
+                            // Normal response handling when no array response
+                            renderMessageContent(botPlaceholder, responses[0]);
+                            messageElement = botPlaceholder;
+                            
+                            // Filter out similar items before rendering as messages
+                            if (responses.length > 1) {
+                                responses.slice(1).forEach(item => {
+                                    // Skip similar items - they will be rendered via ensureSimilarSectionRendered
+                                    if (item.simmilar && typeof item.simmilar === 'string' && item.simmilar.trim() === 'موارد مشابه') {
+                                        return;
+                                    }
+                                    if (item.similar && typeof item.similar === 'string' && item.similar.trim() === 'موارد مشابه') {
+                                        return;
+                                    }
+                                    
+                                    const extraMessage = appendMessage('bot', '');
+                                    extraMessage.setAttribute('data-request-id', requestId);
+                                    renderMessageContent(extraMessage, item);
+                                    messageElement = extraMessage;
+                                });
+                            }
                         }
+                        
+                        // ALWAYS ensure similar section is rendered (centralized function)
+                        // This uses the message element as anchor
+                        // Similar objects are NEVER rendered as regular messages above
+                        ensureSimilarSectionRendered({
+                            responseArray: rawResponseData,
+                            requestId: requestId,
+                            anchorElement: messageElement
+                        });
                     }
                 }
             } catch (error) {
@@ -3616,6 +4020,253 @@
         function isStatusObject(item) {
             const keys = Object.keys(item);
             return keys.length === 1 && keys[0] === 'نتیجه' && (item.نتیجه === 'false' || item.نتیجه === false);
+        }
+        
+        // Helper function to extract main message and similar items from response array (for store-selected case)
+        // Main message can be in "نتیجه" OR "message" (prefer "نتیجه" if both exist)
+        // ALWAYS extracts similar items regardless of message format
+        function parseStoreResponseWithSimilarItems(responseArray) {
+            let mainMessage = null;
+            const similarItems = [];
+            
+            if (!Array.isArray(responseArray)) {
+                return { mainMessage, similarItems };
+            }
+            
+            responseArray.forEach((item) => {
+                // Skip status objects
+                if (isStatusObject(item)) {
+                    return;
+                }
+                
+                // Extract main message - prefer "نتیجه" over "message"
+                // Extract from items that have "نتیجه" or "message" and do NOT have product url/image
+                // (pure text message objects - store_name can exist in message objects)
+                if (!mainMessage) {
+                    const hasImage = item.image || item.url || item.image_url || item.photo;
+                    
+                    // Only treat as main message if it doesn't have image/url (pure text object)
+                    if (!hasImage) {
+                        const resultText = item.نتیجه || item.result || '';
+                        const messageText = item.message || '';
+                        
+                        // Prefer نتیجه if it exists and is not empty, otherwise use message
+                        if (resultText && typeof resultText === 'string' && resultText.trim()) {
+                            mainMessage = resultText.trim();
+                        } else if (messageText && typeof messageText === 'string' && messageText.trim()) {
+                            mainMessage = messageText.trim();
+                        }
+                    }
+                }
+                
+                // Extract similar items - check ALL items regardless of message extraction
+                // Do NOT require imageUrl to exist - include all similar items
+                if (isSimilarItem(item)) {
+                    const imageUrl = item.image || item.url || item.image_url || item.photo || '';
+                    similarItems.push({
+                        url: imageUrl,
+                        info: item.info || item.text || item.caption || item.description || '',
+                        price: item.price || item.قیمت || null,
+                        storeName: getStoreName(item),
+                        storeInfo: getStoreInfo(item)
+                    });
+                }
+            });
+            
+            // Debug logging (can be removed in production)
+            if (typeof console !== 'undefined' && console.log) {
+                console.log('[parseStoreResponseWithSimilarItems] similarItems length:', similarItems.length, similarItems);
+                console.log('[parseStoreResponseWithSimilarItems] mainMessage:', mainMessage);
+            }
+            
+            return { mainMessage, similarItems };
+        }
+        
+        // Centralized function to ensure similar section is rendered
+        // This is the SINGLE entry point for rendering similar items section
+        function ensureSimilarSectionRendered({ responseArray, requestId, anchorElement }) {
+            // Extract similar items from response array
+            let similarItems = [];
+            
+            if (Array.isArray(responseArray)) {
+                responseArray.forEach((item) => {
+                    if (!isStatusObject(item) && isSimilarItem(item)) {
+                        const imageUrl = item.image || item.url || item.image_url || item.photo || '';
+                        similarItems.push({
+                            url: imageUrl,
+                            info: item.info || item.text || item.caption || item.description || '',
+                            price: item.price || item.قیمت || null,
+                            storeName: getStoreName(item),
+                            storeInfo: getStoreInfo(item)
+                        });
+                    }
+                });
+            }
+            
+            // Debug logging
+            if (typeof console !== 'undefined' && console.log) {
+                console.log('[similar-debug] requestId', requestId, 'similarItems', similarItems.length, similarItems);
+                console.log('[similar-debug] anchor element exists?', !!anchorElement);
+            }
+            
+            // If no similar items, remove any existing similar section for this requestId and return
+            if (similarItems.length === 0) {
+                // Remove any existing similar section for this requestId
+                const existingSimilar = searchResults.querySelector(`.similar-items-section[data-request-id="${requestId}"]`);
+                if (existingSimilar) {
+                    existingSimilar.remove();
+                }
+                return null;
+            }
+            
+            // Remove any existing similar section for this requestId (avoid duplicates)
+            const existingSimilar = searchResults.querySelector(`.similar-items-section[data-request-id="${requestId}"]`);
+            if (existingSimilar) {
+                existingSimilar.remove();
+            }
+            
+            // Find anchor element - prefer provided anchor, fallback to query element, then searchResults
+            let insertAfterElement = anchorElement;
+            
+            if (!insertAfterElement) {
+                // Try to find the bot message for this requestId
+                insertAfterElement = searchResults.querySelector(`.message-bot[data-request-id="${requestId}"]`);
+            }
+            
+            if (!insertAfterElement) {
+                // Fallback to query element
+                insertAfterElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
+            }
+            
+            if (!insertAfterElement) {
+                // Last resort: use searchResults last child or searchResults itself
+                insertAfterElement = searchResults.lastElementChild || searchResults;
+            }
+            
+            // Create and insert similar section
+            return createSimilarItemsSection(similarItems, requestId, insertAfterElement);
+        }
+        
+        // Helper function to create similar items section (horizontal scroll carousel)
+        function createSimilarItemsSection(similarItems, requestId, insertAfterElement) {
+            if (!similarItems || similarItems.length === 0) {
+                return null;
+            }
+            
+            const similarSection = document.createElement('div');
+            similarSection.className = 'similar-items-section';
+            similarSection.setAttribute('data-request-id', requestId);
+            
+            const title = document.createElement('div');
+            title.className = 'similar-items-title';
+            title.textContent = 'موارد مشابه';
+            similarSection.appendChild(title);
+            
+            const scrollContainer = document.createElement('div');
+            scrollContainer.className = 'similar-items-scroll';
+            
+            similarItems.forEach((item) => {
+                const similarItem = document.createElement('div');
+                similarItem.className = 'similar-item';
+                
+                // Header with store info and map button
+                const header = document.createElement('div');
+                header.className = 'similar-item-header';
+                
+                const storeInfoDiv = document.createElement('div');
+                storeInfoDiv.className = 'similar-item-store-info';
+                
+                if (item.storeName) {
+                    const storeNameDiv = document.createElement('div');
+                    storeNameDiv.className = 'similar-item-store-name';
+                    storeNameDiv.textContent = item.storeName;
+                    storeInfoDiv.appendChild(storeNameDiv);
+                }
+                
+                if (item.storeInfo) {
+                    const storeInfoText = document.createElement('div');
+                    storeInfoText.className = 'similar-item-store-info-text';
+                    storeInfoText.textContent = item.storeInfo;
+                    storeInfoDiv.appendChild(storeInfoText);
+                }
+                
+                header.appendChild(storeInfoDiv);
+                
+                // Add نقشه button - opens Google Maps search
+                const mapBtn = document.createElement('button');
+                mapBtn.className = 'similar-item-map-btn';
+                mapBtn.textContent = 'نقشه';
+                mapBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // Build search query from store name and info
+                    const queryParts = [];
+                    if (item.storeName) {
+                        queryParts.push(item.storeName.trim());
+                    }
+                    if (item.storeInfo) {
+                        queryParts.push(item.storeInfo.trim());
+                    }
+                    
+                    if (queryParts.length > 0) {
+                        const query = queryParts.join(' ');
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                        window.open(mapsUrl, '_blank');
+                    }
+                });
+                header.appendChild(mapBtn);
+                
+                similarItem.appendChild(header);
+                
+                // Image
+                if (item.url) {
+                    const image = document.createElement('img');
+                    image.src = item.url;
+                    image.alt = item.storeName || 'تصویر';
+                    image.className = 'similar-item-image';
+                    image.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                    similarItem.appendChild(image);
+                }
+                
+                // Details (info and price)
+                const details = document.createElement('div');
+                details.className = 'similar-item-details';
+                
+                if (item.info) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'similar-item-info';
+                    infoDiv.textContent = item.info;
+                    details.appendChild(infoDiv);
+                }
+                
+                if (item.price) {
+                    const priceDiv = document.createElement('div');
+                    priceDiv.className = 'similar-item-price';
+                    // Format price with commas
+                    const formattedPrice = item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                    priceDiv.textContent = `${formattedPrice} تومان`;
+                    details.appendChild(priceDiv);
+                }
+                
+                similarItem.appendChild(details);
+                scrollContainer.appendChild(similarItem);
+            });
+            
+            similarSection.appendChild(scrollContainer);
+            
+            // Insert the section after the specified element
+            if (insertAfterElement && insertAfterElement.parentNode) {
+                const nextSibling = insertAfterElement.nextSibling;
+                if (nextSibling) {
+                    insertAfterElement.parentNode.insertBefore(similarSection, nextSibling);
+                } else {
+                    insertAfterElement.parentNode.appendChild(similarSection);
+                }
+            }
+            
+            return similarSection;
         }
         
         // Transform webhook response into clean structure
@@ -3712,14 +4363,16 @@
         
         // Display store folders when no store is selected
         // Process responses sequentially: store_name + نتیجه creates new folder, images go to current folder
-        function displayStoreFolders(stores, requestId) {
-            // Find the query element for this requestId to insert results right after it
-            const queryElement = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
-            
-            // Transform the raw array into clean structure
+        // Returns the foldersContainer element (or null if no folders created) so caller can use it as anchor for similar section
+        function displayStoreFolders(stores, requestId, insertAfterElement) {
+            // Transform the raw array into clean structure (only normal items should be passed here)
             const transformed = transformWebhookResponse(stores);
             const storesList = transformed.stores;
-            const similarItems = transformed.similar;
+            
+            // If no stores to display, return null
+            if (storesList.length === 0) {
+                return null;
+            }
             
             // Create container for store folders
             const foldersContainer = document.createElement('div');
@@ -3775,216 +4428,31 @@
                 foldersContainer.appendChild(storeFolder);
             });
             
-            // Insert folders container right after the query that triggered it (maintains chronological order)
-            if (queryElement && queryElement.parentNode) {
-                // Insert right after the query element
-                if (queryElement.nextSibling) {
-                    queryElement.parentNode.insertBefore(foldersContainer, queryElement.nextSibling);
-                } else {
-                    queryElement.parentNode.appendChild(foldersContainer);
-                }
-            } else {
-                // Fallback: append to end if query not found
-                searchResults.appendChild(foldersContainer);
+            // Insert folders container after the specified element, or after query element as fallback
+            let insertAnchor = insertAfterElement;
+            if (!insertAnchor) {
+                insertAnchor = searchResults.querySelector(`[data-request-id="${requestId}"].message-user`);
             }
             
-            // Add similar items section if there are any similar items
-            if (similarItems.length > 0) {
-                const similarSection = document.createElement('div');
-                similarSection.className = 'similar-items-section';
-                similarSection.setAttribute('data-request-id', requestId);
-                
-                const title = document.createElement('div');
-                title.className = 'similar-items-title';
-                title.textContent = 'موارد مشابه';
-                similarSection.appendChild(title);
-                
-                const scrollContainer = document.createElement('div');
-                scrollContainer.className = 'similar-items-scroll';
-                
-                similarItems.forEach((item) => {
-                    const similarItem = document.createElement('div');
-                    similarItem.className = 'similar-item';
-                    
-                    // Header with store info and map button
-                    const header = document.createElement('div');
-                    header.className = 'similar-item-header';
-                    
-                    const storeInfoDiv = document.createElement('div');
-                    storeInfoDiv.className = 'similar-item-store-info';
-                    
-                    if (item.storeName) {
-                        const storeNameDiv = document.createElement('div');
-                        storeNameDiv.className = 'similar-item-store-name';
-                        storeNameDiv.textContent = item.storeName;
-                        storeInfoDiv.appendChild(storeNameDiv);
-                    }
-                    
-                    if (item.storeInfo) {
-                        const storeInfoText = document.createElement('div');
-                        storeInfoText.className = 'similar-item-store-info-text';
-                        storeInfoText.textContent = item.storeInfo;
-                        storeInfoDiv.appendChild(storeInfoText);
-                    }
-                    
-                    header.appendChild(storeInfoDiv);
-                    
-                    // Always add نقشه button - fetch coordinates on click
-                    const mapBtn = document.createElement('button');
-                    mapBtn.className = 'similar-item-map-btn';
-                    mapBtn.textContent = 'نقشه';
-                    mapBtn.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        
-                        // Disable button while loading
-                        mapBtn.disabled = true;
-                        const originalText = mapBtn.textContent;
-                        mapBtn.textContent = '...';
-                        
-                        try {
-                            // POST to webhook to get coordinates
-                            const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    action: 'address',
-                                    store_name: item.storeName,
-                                    timestamp: new Date().toISOString()
-                                })
-                            });
-                            
-                            if (!response.ok) {
-                                throw new Error('خطا در دریافت آدرس');
-                            }
-                            
-                            const responseData = await response.json();
-                            
-                            // Helper function to extract coordinates from various response structures
-                            function extractCoordinates(data) {
-                                // If data is an array, check first item
-                                if (Array.isArray(data) && data.length > 0) {
-                                    return extractCoordinates(data[0]);
-                                }
-                                
-                                // Check direct properties
-                                if (data.latitude && data.longitude) {
-                                    return { latitude: data.latitude, longitude: data.longitude };
-                                }
-                                if (data.lat && data.lng) {
-                                    return { latitude: data.lat, longitude: data.lng };
-                                }
-                                if (data.lat && data.lon) {
-                                    return { latitude: data.lat, longitude: data.lon };
-                                }
-                                
-                                // Check nested structures
-                                if (data.data) {
-                                    const nested = extractCoordinates(data.data);
-                                    if (nested) return nested;
-                                }
-                                if (data.result) {
-                                    const nested = extractCoordinates(data.result);
-                                    if (nested) return nested;
-                                }
-                                if (data.response) {
-                                    const nested = extractCoordinates(data.response);
-                                    if (nested) return nested;
-                                }
-                                if (data.location) {
-                                    const nested = extractCoordinates(data.location);
-                                    if (nested) return nested;
-                                }
-                                
-                                // Check common array keys
-                                const arrayKeys = ['items', 'results', 'data', 'locations'];
-                                for (const key of arrayKeys) {
-                                    if (Array.isArray(data[key]) && data[key].length > 0) {
-                                        const nested = extractCoordinates(data[key][0]);
-                                        if (nested) return nested;
-                                    }
-                                }
-                                
-                                return null;
-                            }
-                            
-                            const coords = extractCoordinates(responseData);
-                            
-                            if (coords && coords.latitude && coords.longitude) {
-                                // Validate coordinates are numbers
-                                const lat = parseFloat(coords.latitude);
-                                const lng = parseFloat(coords.longitude);
-                                
-                                if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                                    // Open Google Maps with coordinates
-                                    openGoogleMaps(lat, lng);
-                                } else {
-                                    alert('مختصات جغرافیایی نامعتبر است');
-                                }
-                            } else {
-                                alert('مختصات جغرافیایی در دسترس نیست');
-                            }
-                        } catch (error) {
-                            console.error('Map button error:', error);
-                            alert('خطا در دریافت آدرس. لطفاً دوباره تلاش کنید.');
-                        } finally {
-                            mapBtn.disabled = false;
-                            mapBtn.textContent = originalText;
-                        }
-                    });
-                    header.appendChild(mapBtn);
-                    
-                    similarItem.appendChild(header);
-                    
-                    // Image
-                    const image = document.createElement('img');
-                    image.src = item.url;
-                    image.alt = item.storeName || 'تصویر';
-                    image.className = 'similar-item-image';
-                    image.onerror = function() {
-                        this.style.display = 'none';
-                    };
-                    similarItem.appendChild(image);
-                    
-                    // Details (info and price)
-                    const details = document.createElement('div');
-                    details.className = 'similar-item-details';
-                    
-                    if (item.info) {
-                        const infoDiv = document.createElement('div');
-                        infoDiv.className = 'similar-item-info';
-                        infoDiv.textContent = item.info;
-                        details.appendChild(infoDiv);
-                    }
-                    
-                    if (item.price) {
-                        const priceDiv = document.createElement('div');
-                        priceDiv.className = 'similar-item-price';
-                        // Format price with commas
-                        const formattedPrice = item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                        priceDiv.textContent = `${formattedPrice} تومان`;
-                        details.appendChild(priceDiv);
-                    }
-                    
-                    similarItem.appendChild(details);
-                    scrollContainer.appendChild(similarItem);
-                });
-                
-                similarSection.appendChild(scrollContainer);
-                
-                // Insert similar section after folders container
-                if (foldersContainer.nextSibling) {
-                    foldersContainer.parentNode.insertBefore(similarSection, foldersContainer.nextSibling);
+            if (insertAnchor && insertAnchor.parentNode) {
+                // Insert right after the anchor element
+                if (insertAnchor.nextSibling) {
+                    insertAnchor.parentNode.insertBefore(foldersContainer, insertAnchor.nextSibling);
                 } else {
-                    foldersContainer.parentNode.appendChild(similarSection);
+                    insertAnchor.parentNode.appendChild(foldersContainer);
                 }
+            } else {
+                // Fallback: append to end if anchor not found
+                searchResults.appendChild(foldersContainer);
             }
             
             // Clean up old items (keep last 5 searches = 10 items: 5 queries + 5 results)
             cleanupOldItems();
             
             scrollToBottom();
+            
+            // Return foldersContainer so caller can use it as anchor for similar section
+            return foldersContainer;
         }
         
         // Clean up old items while maintaining chronological order
@@ -4248,7 +4716,8 @@
                             const locationContent = createLocationContent({
                                 latitude: lat,
                                 longitude: lng,
-                                text: addressText || 'موقعیت فروشگاه'
+                                text: addressText || 'موقعیت فروشگاه',
+                                ادرس: addressText || ''
                             });
                             storeDetailAddressLocation.innerHTML = '';
                             storeDetailAddressLocation.appendChild(locationContent);
@@ -4505,6 +4974,17 @@
                 deleteEditPage.style.display = 'none';
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
+                return;
+            }
+            
+            // If main content area is visible (from "10 محصول آخر"), go back to admin dashboard
+            if (mainContentArea.style.display === 'block' && isAuthenticated()) {
+                mainContentArea.style.display = 'none';
+                document.querySelector('.search-bar').style.display = 'none';
+                adminDashboard.classList.add('show');
+                backBtn.style.display = 'none';
+                // Clear search results when going back
+                searchResults.innerHTML = '';
                 return;
             }
             
@@ -5077,10 +5557,18 @@
                     return;
                 }
                 
-                    // Show loading state - ensure main content area is visible
-                    mainContentArea.style.display = 'block';
+                // Clear search results history before showing new data
+                searchResults.innerHTML = '';
+                
+                // Hide admin dashboard and show main content area to display results
+                adminDashboard.classList.remove('show');
+                mainContentArea.style.display = 'block';
+                document.querySelector('.search-bar').style.display = 'none';
+                // Show back button so user can go back to admin dashboard
+                backBtn.style.display = 'flex';
+                
                 clearEmptyState();
-                    loadingMessage = appendMessage('bot', 'در حال بررسی ...', { isPending: true });
+                loadingMessage = appendMessage('bot', 'در حال بررسی ...', { isPending: true });
                     
                     // Mark this message so it doesn't get cleaned up
                     if (loadingMessage) {
