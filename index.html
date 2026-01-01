@@ -2355,7 +2355,7 @@
         const cityData = {
             'آمل': {
                 stores: ['جواهری دژگان', 'جواهری ستارزاده', 'جواهری محمدی'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
@@ -2395,7 +2395,7 @@
         
         let selectedCity = null; // No city selected by default
         let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
@@ -3174,9 +3174,17 @@
             return figure;
         }
 
-        function createLocationContent({ latitude, longitude, text, ادرس }) {
+        function createLocationContent({ latitude, longitude, text, ادرس, فروشگاه }) {
             const container = document.createElement('div');
             container.className = 'message-location';
+
+            // Show فروشگاه in bold above address if available
+            if (فروشگاه) {
+                const storeDiv = document.createElement('div');
+                storeDiv.style.cssText = 'font-weight: bold; font-size: 15px; color: #333; margin-bottom: 8px;';
+                storeDiv.textContent = فروشگاه;
+                container.appendChild(storeDiv);
+            }
 
             // Check if text and ادرس are the same to avoid duplication
             const textValue = text || '';
@@ -3354,7 +3362,8 @@
                         latitude: raw.latitude || raw.lat,
                         longitude: raw.longitude || raw.lng || raw.lon,
                         text: raw.text || raw.caption || raw.description || '',
-                        ادرس: raw.ادرس || raw.address || ''
+                        ادرس: raw.ادرس || raw.address || '',
+                        فروشگاه: raw.فروشگاه || raw.store || raw.store_name || ''
                     }];
                 }
 
@@ -3467,7 +3476,8 @@
                         latitude: lat,
                         longitude: lng,
                         text: payload.text || payload.ادرس || 'موقعیت فروشگاه',
-                        ادرس: payload.ادرس || payload.address || ''
+                        ادرس: payload.ادرس || payload.address || '',
+                        فروشگاه: payload.فروشگاه || payload.store || payload.store_name || ''
                     }));
                     return;
                 }
@@ -4747,7 +4757,8 @@
                                 latitude: lat,
                                 longitude: lng,
                                 text: addressText || 'موقعیت فروشگاه',
-                                ادرس: addressText || ''
+                                ادرس: addressText || '',
+                                فروشگاه: responseData.فروشگاه || responseData.store || responseData.store_name || ''
                             });
                             storeDetailAddressLocation.innerHTML = '';
                             storeDetailAddressLocation.appendChild(locationContent);
