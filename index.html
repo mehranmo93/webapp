@@ -2180,11 +2180,10 @@
                         <input type="text" class="form-input" id="storeSetupCode" placeholder="کد 5 رقمی" maxlength="5" required />
                     </div>
                     <div class="form-group">
-                        <label class="form-label">اطلاعات فروشگاه شامل نام، تلفن تماس و آدرس</label>
-                        <input type="text" class="form-input" id="storeSetupName" placeholder="نام فروشگاه" required />
-                        <input type="tel" class="form-input" id="storeSetupPhone" placeholder="تلفن تماس" required style="margin-top: 12px;" />
-                        <input type="text" class="form-input" id="storeSetupCity" placeholder="شهر" required style="margin-top: 12px;" />
-                        <input type="text" class="form-input" id="storeSetupAddress" placeholder="آدرس" required style="margin-top: 12px;" />
+                        <label class="form-label">اطلاعات فروشگاه شامل تلفن تماس و آدرس</label>
+                        <input type="tel" class="form-input" id="storeSetupPhone" placeholder="تلفن تماس" required />
+                        <input type="text" class="form-input" id="storeSetupCity" placeholder="نام شهر" required style="margin-top: 12px;" />
+                        <input type="text" class="form-input" id="storeSetupAddress" placeholder="آدرس کامل: شهر، خیابان، ..." required style="margin-top: 12px;" />
                     </div>
                     <div class="form-group">
                         <button type="button" class="form-submit-btn" id="storeSetupLocationBtn" style="background: var(--black-primary); color: var(--gold-primary); border: 2px solid var(--gold-primary); margin-top: 12px;">
@@ -2356,14 +2355,14 @@
         const cityData = {
             'آمل': {
                 stores: ['جواهری دژگان', 'جواهری ستارزاده', 'جواهری محمدی'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b'
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
                 webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/770eb30a-288a-41fc-9d2d-501860b1de3a'
             },
             'آنلاین': {
-                stores: ['طلاسو'],
+                stores: ['جواهری انلاین طلاسو'],
                 webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/053e875b-1a42-4d6a-9670-8289076dac38'
             }
         };
@@ -2396,7 +2395,7 @@
         
         let selectedCity = null; // No city selected by default
         let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
@@ -3442,7 +3441,17 @@
             }
 
             if (payload.type === 'image' && payload.url) {
-                updateMessage(targetEl, createImageContent(payload));
+                // Extract caption from various possible fields (info, text, caption, description)
+                const caption = payload.caption || payload.info || payload.text || payload.description || '';
+                updateMessage(targetEl, createImageContent({ url: payload.url, caption: caption }));
+                return;
+            }
+            
+            // Also handle items that have url/image but no explicit type
+            if (payload.url || payload.image || payload.image_url || payload.photo) {
+                const imageUrl = payload.url || payload.image || payload.image_url || payload.photo;
+                const caption = payload.caption || payload.info || payload.text || payload.description || '';
+                updateMessage(targetEl, createImageContent({ url: imageUrl, caption: caption }));
                 return;
             }
 
@@ -3680,12 +3689,18 @@
                                     if (firstNormal.latitude && firstNormal.longitude) {
                                         renderMessageContent(botPlaceholder, firstNormal);
                                     } else {
-                                        const responseItem = {
-                                            type: (firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo) ? 'image' : 'text',
-                                            url: firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo,
-                                            text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
-                                        };
-                                        renderMessageContent(botPlaceholder, responseItem);
+                                        const hasImage = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
+                                        if (hasImage) {
+                                            const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
+                                            const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: imageUrl, caption: caption });
+                                        } else {
+                                            const responseItem = {
+                                                type: 'text',
+                                                text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
+                                            };
+                                            renderMessageContent(botPlaceholder, responseItem);
+                                        }
                                     }
                                 } else {
                                     renderMessageContent(botPlaceholder, responses[0]);
@@ -3700,12 +3715,18 @@
                                     if (item.latitude && item.longitude) {
                                         renderMessageContent(extraMessage, item);
                                     } else {
-                                        const responseItem = {
-                                            type: (item.image || item.url || item.image_url || item.photo) ? 'image' : 'text',
-                                            url: item.image || item.url || item.image_url || item.photo,
-                                            text: item.info || item.text || item.caption || item.description || ''
-                                        };
-                                        renderMessageContent(extraMessage, responseItem);
+                                        const hasImage = item.image || item.url || item.image_url || item.photo;
+                                        if (hasImage) {
+                                            const imageUrl = item.image || item.url || item.image_url || item.photo;
+                                            const caption = item.info || item.text || item.caption || item.description || '';
+                                            renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
+                                        } else {
+                                            const responseItem = {
+                                                type: 'text',
+                                                text: item.info || item.text || item.caption || item.description || ''
+                                            };
+                                            renderMessageContent(extraMessage, responseItem);
+                                        }
                                     }
                                     lastMessageElement = extraMessage;
                                 });
@@ -3748,12 +3769,18 @@
                                     if (firstNormal.latitude && firstNormal.longitude) {
                                         renderMessageContent(botPlaceholder, firstNormal);
                                     } else {
-                                        const responseItem = {
-                                            type: (firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo) ? 'image' : 'text',
-                                            url: firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo,
-                                            text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
-                                        };
-                                        renderMessageContent(botPlaceholder, responseItem);
+                                        const hasImage = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
+                                        if (hasImage) {
+                                            const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
+                                            const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: imageUrl, caption: caption });
+                                        } else {
+                                            const responseItem = {
+                                                type: 'text',
+                                                text: firstNormal.نتیجه || firstNormal.result || firstNormal.message || firstNormal.info || firstNormal.text || ''
+                                            };
+                                            renderMessageContent(botPlaceholder, responseItem);
+                                        }
                                     }
                                 } else {
                                     renderMessageContent(botPlaceholder, responses[0]);
@@ -3768,12 +3795,18 @@
                                     if (item.latitude && item.longitude) {
                                         renderMessageContent(extraMessage, item);
                                     } else {
-                                        const responseItem = {
-                                            type: (item.image || item.url || item.image_url || item.photo) ? 'image' : 'text',
-                                            url: item.image || item.url || item.image_url || item.photo,
-                                            text: item.info || item.text || item.caption || item.description || ''
-                                        };
-                                        renderMessageContent(extraMessage, responseItem);
+                                        const hasImage = item.image || item.url || item.image_url || item.photo;
+                                        if (hasImage) {
+                                            const imageUrl = item.image || item.url || item.image_url || item.photo;
+                                            const caption = item.info || item.text || item.caption || item.description || '';
+                                            renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
+                                        } else {
+                                            const responseItem = {
+                                                type: 'text',
+                                                text: item.info || item.text || item.caption || item.description || ''
+                                            };
+                                            renderMessageContent(extraMessage, responseItem);
+                                        }
                                     }
                                     lastMessageElement = extraMessage;
                                 });
@@ -3918,12 +3951,9 @@
                                     const extraMessage = appendMessage('bot', '');
                                     extraMessage.setAttribute('data-request-id', requestId);
                                     // Convert item to response format for renderMessageContent
-                                    const responseItem = {
-                                        type: 'image',
-                                        url: item.image || item.url || item.image_url || item.photo,
-                                        text: item.info || item.text || item.caption || item.description || ''
-                                    };
-                                    renderMessageContent(extraMessage, responseItem);
+                                    const imageUrl = item.image || item.url || item.image_url || item.photo;
+                                    const caption = item.info || item.text || item.caption || item.description || '';
+                                    renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
                                     messageElement = extraMessage;
                                 }
                             });
@@ -5386,12 +5416,11 @@
             const password = document.getElementById('storeSetupPassword').value.trim();
             const mobile = document.getElementById('storeSetupMobile').value.trim();
             const code = document.getElementById('storeSetupCode').value.trim();
-            const storeName = document.getElementById('storeSetupName').value.trim();
             const storePhone = document.getElementById('storeSetupPhone').value.trim();
             const storeCity = document.getElementById('storeSetupCity').value.trim();
             const storeAddress = document.getElementById('storeSetupAddress').value.trim();
 
-            if (!username || !password || !mobile || !code || !storeName || !storePhone || !storeCity || !storeAddress) {
+            if (!username || !password || !mobile || !code || !storePhone || !storeCity || !storeAddress) {
                 alert('لطفاً تمام فیلدها را پر کنید');
                 return;
             }
@@ -5416,7 +5445,6 @@
                         password: password,
                         mobile: mobile,
                         code: code,
-                        storeName: storeName,
                         storePhone: storePhone,
                         storeCity: storeCity,
                         storeAddress: storeAddress,
