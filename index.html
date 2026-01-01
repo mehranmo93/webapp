@@ -2023,6 +2023,7 @@
         </div>
         <div class="admin-buttons-bottom">
             <button class="admin-btn admin-btn-update" id="updatePricesBtn">آپدیت قیمت ها</button>
+            <div id="updatePricesStatus" style="display: none; text-align: center; padding: 12px; color: var(--gold-primary); font-weight: 500; font-size: 15px; margin-top: 8px;"></div>
             <div class="admin-buttons-row">
                 <button class="admin-btn admin-btn-add" id="addBtn">افزودن</button>
                 <button class="admin-btn admin-btn-delete" id="deleteEditBtn">حذف یا ادیت</button>
@@ -5727,6 +5728,9 @@
             // آپدیت قیمت ها - trigger webhook
             if (!requireAuth()) return;
             
+            const updatePricesStatus = document.getElementById('updatePricesStatus');
+            const originalButtonText = updatePricesBtn.textContent;
+            
             try {
                 const token = getToken();
                 const username = getUsername();
@@ -5735,6 +5739,11 @@
                     alert('لطفاً ابتدا وارد شوید');
                     return;
                 }
+                
+                // Show loading status
+                updatePricesBtn.disabled = true;
+                updatePricesStatus.textContent = 'در حال بروز رسانی...';
+                updatePricesStatus.style.display = 'block';
                 
                 const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/5906c811-a199-49c6-bd96-1f2e1cdf6e53', {
                     method: 'POST',
@@ -5754,6 +5763,8 @@
                     if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
                         clearToken();
                         requireAuth();
+                        updatePricesStatus.style.display = 'none';
+                        updatePricesBtn.disabled = false;
                         return;
                     }
                     throw new Error('خطا در به‌روزرسانی قیمت‌ها');
@@ -5761,6 +5772,9 @@
                 
                 const data = await response.json();
                 if (response.ok) {
+                    // Hide status message on success
+                    updatePricesStatus.style.display = 'none';
+                    
                     // Check nextPage value from response
                     if (data.nextPage) {
                         if (data.nextPage === 'login') {
@@ -5783,7 +5797,11 @@
                 }
             } catch (error) {
                 console.error('Update prices error:', error);
+                updatePricesStatus.style.display = 'none';
                 alert('خطا در به‌روزرسانی قیمت‌ها');
+            } finally {
+                // Re-enable button
+                updatePricesBtn.disabled = false;
             }
         });
 
