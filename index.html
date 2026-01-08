@@ -479,6 +479,144 @@
             text-align: right;
         }
 
+        /* Image Carousel Styles */
+        .image-carousel-container {
+            position: relative;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .image-carousel {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            gap: 12px;
+            padding: 8px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--gold-primary) transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .image-carousel::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .image-carousel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .image-carousel::-webkit-scrollbar-thumb {
+            background-color: var(--gold-primary);
+            border-radius: 3px;
+        }
+
+        .image-carousel-item {
+            flex: 0 0 auto;
+            width: 280px;
+            height: 280px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+            position: relative;
+        }
+
+        .image-carousel-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .image-carousel-item img:hover {
+            transform: scale(1.02);
+        }
+
+        .image-carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+            transition: all 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .image-carousel-container:hover .image-carousel-nav {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .image-carousel-nav:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .image-carousel-nav.prev {
+            left: 8px;
+        }
+
+        .image-carousel-nav.next {
+            right: 8px;
+        }
+
+        .image-carousel-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .image-carousel-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 0 8px;
+        }
+
+        .image-carousel-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .image-carousel-dot.active {
+            background-color: var(--gold-primary);
+            width: 20px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 480px) {
+            .image-carousel-item {
+                width: 240px;
+                height: 240px;
+            }
+
+            .image-carousel-nav {
+                opacity: 1;
+                pointer-events: auto;
+                width: 24px;
+                height: 24px;
+                font-size: 12px;
+            }
+        }
+
         .message-location {
             display: flex;
             flex-direction: column;
@@ -2445,7 +2583,7 @@
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/770eb30a-288a-41fc-9d2d-501860b1de3a'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/770eb30a-288a-41fc-9d2d-501860b1de3a'
             },
             'آنلاین': {
                 stores: ['جواهری انلاین طلاسو'],
@@ -3296,7 +3434,40 @@
             return wrapper;
         }
 
-        function createImageContent({ url, caption }) {
+        // Helper function to parse stringified JSON array from URL field
+        function parseImageUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return { url: url, images: null };
+            }
+            
+            try {
+                const parsed = JSON.parse(url);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    const validImages = parsed.filter(img => {
+                        if (typeof img === 'string') {
+                            return img.trim().length > 0 && (img.startsWith('http') || img.startsWith('data:'));
+                        }
+                        return false;
+                    });
+                    
+                    if (validImages.length > 0) {
+                        return { url: validImages[0], images: validImages };
+                    }
+                }
+            } catch (e) {
+                // Not a JSON array, treat as normal string URL
+            }
+            
+            return { url: url, images: null };
+        }
+
+        function createImageContent({ url, caption, images }) {
+            // If images array is provided, create carousel
+            if (images && Array.isArray(images) && images.length > 0) {
+                return createImageCarousel(images, caption);
+            }
+            
+            // Single image
             const figure = document.createElement('figure');
             figure.className = 'message-media';
 
@@ -3313,6 +3484,193 @@
             }
 
             return figure;
+        }
+
+        function createImageCarousel(imageUrls, caption) {
+            const container = document.createElement('div');
+            container.className = 'image-carousel-container';
+
+            const carousel = document.createElement('div');
+            carousel.className = 'image-carousel';
+            carousel.setAttribute('role', 'region');
+            carousel.setAttribute('aria-label', 'تصاویر محصول');
+
+            let currentIndex = 0;
+            let isDragging = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            // Create carousel items
+            imageUrls.forEach((url, index) => {
+                const item = document.createElement('div');
+                item.className = 'image-carousel-item';
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = caption ? `${caption} - تصویر ${index + 1}` : `تصویر ${index + 1}`;
+                img.loading = index === 0 ? 'eager' : 'lazy';
+                img.draggable = false;
+
+                item.appendChild(img);
+                carousel.appendChild(item);
+            });
+
+            // Navigation arrows (desktop)
+            if (imageUrls.length > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'image-carousel-nav prev';
+                prevBtn.innerHTML = '◀';
+                prevBtn.setAttribute('aria-label', 'تصویر قبلی');
+                prevBtn.addEventListener('click', () => scrollCarousel(-1));
+
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'image-carousel-nav next';
+                nextBtn.innerHTML = '▶';
+                nextBtn.setAttribute('aria-label', 'تصویر بعدی');
+                nextBtn.addEventListener('click', () => scrollCarousel(1));
+
+                container.appendChild(prevBtn);
+                container.appendChild(nextBtn);
+
+                // Indicators
+                const indicator = document.createElement('div');
+                indicator.className = 'image-carousel-indicator';
+                
+                imageUrls.forEach((_, index) => {
+                    const dot = document.createElement('div');
+                    dot.className = 'image-carousel-dot' + (index === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', `برو به تصویر ${index + 1}`);
+                    dot.addEventListener('click', () => scrollToIndex(index));
+                    indicator.appendChild(dot);
+                });
+
+                function updateIndicators() {
+                    const dots = indicator.querySelectorAll('.image-carousel-dot');
+                    dots.forEach((dot, index) => {
+                        dot.classList.toggle('active', index === currentIndex);
+                    });
+                    updateNavButtons();
+                }
+
+                function updateNavButtons() {
+                    prevBtn.disabled = currentIndex === 0;
+                    nextBtn.disabled = currentIndex === imageUrls.length - 1;
+                }
+
+                function scrollToIndex(index) {
+                    if (index < 0 || index >= imageUrls.length) return;
+                    currentIndex = index;
+                    const item = carousel.children[index];
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    updateIndicators();
+                }
+
+                function scrollCarousel(direction) {
+                    // Left arrow (-1) shows previous image (lower index)
+                    // Right arrow (+1) shows next image (higher index)
+                    const newIndex = currentIndex + direction;
+                    if (newIndex >= 0 && newIndex < imageUrls.length) {
+                        scrollToIndex(newIndex);
+                    }
+                }
+
+                // Touch/swipe support
+                carousel.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    startX = e.touches[0].pageX - carousel.offsetLeft;
+                    scrollLeft = carousel.scrollLeft;
+                });
+
+                carousel.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const x = e.touches[0].pageX - carousel.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    carousel.scrollLeft = scrollLeft - walk;
+                });
+
+                carousel.addEventListener('touchend', () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    
+                    // Snap to nearest item
+                    const itemWidth = carousel.children[0].offsetWidth + 12; // width + gap
+                    const scrollPosition = carousel.scrollLeft;
+                    const newIndex = Math.round(scrollPosition / itemWidth);
+                    scrollToIndex(Math.max(0, Math.min(newIndex, imageUrls.length - 1)));
+                });
+
+                // Mouse drag support
+                carousel.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.pageX - carousel.offsetLeft;
+                    scrollLeft = carousel.scrollLeft;
+                    carousel.style.cursor = 'grabbing';
+                });
+
+                carousel.addEventListener('mouseleave', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        carousel.style.cursor = 'grab';
+                        const itemWidth = carousel.children[0].offsetWidth + 12;
+                        const scrollPosition = carousel.scrollLeft;
+                        const newIndex = Math.round(scrollPosition / itemWidth);
+                        scrollToIndex(Math.max(0, Math.min(newIndex, imageUrls.length - 1)));
+                    }
+                });
+
+                carousel.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        carousel.style.cursor = 'grab';
+                        const itemWidth = carousel.children[0].offsetWidth + 12;
+                        const scrollPosition = carousel.scrollLeft;
+                        const newIndex = Math.round(scrollPosition / itemWidth);
+                        scrollToIndex(Math.max(0, Math.min(newIndex, imageUrls.length - 1)));
+                    }
+                });
+
+                carousel.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const x = e.pageX - carousel.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    carousel.scrollLeft = scrollLeft - walk;
+                });
+
+                carousel.style.cursor = 'grab';
+
+                // Scroll event to update indicators
+                let scrollTimeout;
+                carousel.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        const itemWidth = carousel.children[0].offsetWidth + 12;
+                        const scrollPosition = carousel.scrollLeft;
+                        const newIndex = Math.round(scrollPosition / itemWidth);
+                        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < imageUrls.length) {
+                            currentIndex = newIndex;
+                            updateIndicators();
+                        }
+                    }, 100);
+                });
+
+                // Initialize
+                updateNavButtons();
+                container.appendChild(indicator);
+            }
+
+            container.appendChild(carousel);
+
+            if (caption) {
+                const figcaption = document.createElement('figcaption');
+                figcaption.textContent = caption;
+                figcaption.style.marginTop = '8px';
+                figcaption.style.textAlign = 'center';
+                container.appendChild(figcaption);
+            }
+
+            return container;
         }
 
         function createLocationContent({ latitude, longitude, text, ادرس, فروشگاه }) {
@@ -3477,9 +3835,62 @@
                     }
                 }
 
+                // Check for images array first (multiple images for carousel)
+                if (raw.images && Array.isArray(raw.images) && raw.images.length > 0) {
+                    // Filter valid image URLs/strings
+                    const validImages = raw.images.filter(img => {
+                        if (typeof img === 'string') return img.trim().length > 0;
+                        if (typeof img === 'object' && img !== null) {
+                            return img.url || img.image || img.image_url || img.photo;
+                        }
+                        return false;
+                    }).map(img => {
+                        if (typeof img === 'string') return img;
+                        return img.url || img.image || img.image_url || img.photo;
+                    });
+
+                    if (validImages.length > 0) {
+                        return [{
+                            type: 'image',
+                            images: validImages,
+                            url: validImages[0], // First image as fallback
+                            caption: raw.caption || raw.info || raw.text || raw.description || ''
+                        }];
+                    }
+                }
+
                 const type = inferResponseType(raw);
                 if (type === 'image') {
                     let source = raw.url || raw.image || raw.image_url || raw.photo;
+                    
+                    // Check if url/image is a stringified JSON array
+                    if (source && typeof source === 'string') {
+                        try {
+                            // Try to parse as JSON array
+                            const parsed = JSON.parse(source);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                // Filter valid image URLs
+                                const validImages = parsed.filter(img => {
+                                    if (typeof img === 'string') {
+                                        return img.trim().length > 0 && (img.startsWith('http') || img.startsWith('data:'));
+                                    }
+                                    return false;
+                                });
+                                
+                                if (validImages.length > 0) {
+                                    return [{
+                                        type: 'image',
+                                        images: validImages,
+                                        url: validImages[0], // First image as fallback
+                                        caption: raw.caption || raw.info || raw.text || raw.description || ''
+                                    }];
+                                }
+                            }
+                        } catch (e) {
+                            // Not a JSON array, treat as normal string URL
+                        }
+                    }
+                    
                     if (!source && raw.data) {
                         source = detectInlineImageSource(raw.data);
                         if (!source) {
@@ -3593,15 +4004,89 @@
             if (payload.type === 'image' && payload.url) {
                 // Extract caption from various possible fields (info, text, caption, description)
                 const caption = payload.caption || payload.info || payload.text || payload.description || '';
-                updateMessage(targetEl, createImageContent({ url: payload.url, caption: caption }));
+                
+                // Check if images array exists for carousel
+                if (payload.images && Array.isArray(payload.images) && payload.images.length > 0) {
+                    updateMessage(targetEl, createImageContent({ images: payload.images, caption: caption }));
+                    return;
+                }
+                
+                // Check if url is a stringified JSON array
+                let imageUrl = payload.url;
+                let imagesArray = null;
+                
+                if (imageUrl && typeof imageUrl === 'string') {
+                    try {
+                        const parsed = JSON.parse(imageUrl);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            const validImages = parsed.filter(img => {
+                                if (typeof img === 'string') {
+                                    return img.trim().length > 0 && (img.startsWith('http') || img.startsWith('data:'));
+                                }
+                                return false;
+                            });
+                            
+                            if (validImages.length > 0) {
+                                imagesArray = validImages;
+                                imageUrl = validImages[0];
+                            }
+                        }
+                    } catch (e) {
+                        // Not a JSON array, treat as normal string URL
+                    }
+                }
+                
+                if (imagesArray && imagesArray.length > 0) {
+                    updateMessage(targetEl, createImageContent({ images: imagesArray, caption: caption }));
+                } else {
+                    updateMessage(targetEl, createImageContent({ url: imageUrl, caption: caption }));
+                }
                 return;
             }
             
             // Also handle items that have url/image but no explicit type
-            if (payload.url || payload.image || payload.image_url || payload.photo) {
-                const imageUrl = payload.url || payload.image || payload.image_url || payload.photo;
+            if (payload.url || payload.image || payload.image_url || payload.photo || (payload.images && Array.isArray(payload.images))) {
+                // Check for images array first
+                if (payload.images && Array.isArray(payload.images) && payload.images.length > 0) {
+                    const caption = payload.caption || payload.info || payload.text || payload.description || '';
+                    updateMessage(targetEl, createImageContent({ images: payload.images, caption: caption }));
+                    return;
+                }
+                
+                // Check if url/image is a stringified JSON array
+                let imageUrl = payload.url || payload.image || payload.image_url || payload.photo;
+                let imagesArray = null;
+                
+                if (imageUrl && typeof imageUrl === 'string') {
+                    try {
+                        // Try to parse as JSON array
+                        const parsed = JSON.parse(imageUrl);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            // Filter valid image URLs
+                            const validImages = parsed.filter(img => {
+                                if (typeof img === 'string') {
+                                    return img.trim().length > 0 && (img.startsWith('http') || img.startsWith('data:'));
+                                }
+                                return false;
+                            });
+                            
+                            if (validImages.length > 0) {
+                                imagesArray = validImages;
+                                imageUrl = validImages[0]; // First image as fallback
+                            }
+                        }
+                    } catch (e) {
+                        // Not a JSON array, treat as normal string URL
+                    }
+                }
+                
                 const caption = payload.caption || payload.info || payload.text || payload.description || '';
-                updateMessage(targetEl, createImageContent({ url: imageUrl, caption: caption }));
+                
+                if (imagesArray && imagesArray.length > 0) {
+                    updateMessage(targetEl, createImageContent({ images: imagesArray, caption: caption }));
+                } else if (imageUrl) {
+                    updateMessage(targetEl, createImageContent({ url: imageUrl, caption: caption }));
+                }
                 return;
             }
 
@@ -3844,7 +4329,8 @@
                                         if (hasImage) {
                                             const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
                                             const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
-                                            renderMessageContent(botPlaceholder, { type: 'image', url: imageUrl, caption: caption });
+                                            const parsed = parseImageUrl(imageUrl);
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -3870,7 +4356,8 @@
                                         if (hasImage) {
                                             const imageUrl = item.image || item.url || item.image_url || item.photo;
                                             const caption = item.info || item.text || item.caption || item.description || '';
-                                            renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
+                                            const parsed = parseImageUrl(imageUrl);
+                                            renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -3924,7 +4411,8 @@
                                         if (hasImage) {
                                             const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
                                             const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
-                                            renderMessageContent(botPlaceholder, { type: 'image', url: imageUrl, caption: caption });
+                                            const parsed = parseImageUrl(imageUrl);
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -3950,7 +4438,8 @@
                                         if (hasImage) {
                                             const imageUrl = item.image || item.url || item.image_url || item.photo;
                                             const caption = item.info || item.text || item.caption || item.description || '';
-                                            renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
+                                            const parsed = parseImageUrl(imageUrl);
+                                            renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -4104,7 +4593,8 @@
                                     // Convert item to response format for renderMessageContent
                                     const imageUrl = item.image || item.url || item.image_url || item.photo;
                                     const caption = item.info || item.text || item.caption || item.description || '';
-                                    renderMessageContent(extraMessage, { type: 'image', url: imageUrl, caption: caption });
+                                    const parsed = parseImageUrl(imageUrl);
+                                    renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
                                     messageElement = extraMessage;
                                 }
                             });
@@ -4527,8 +5017,11 @@
                             });
                         }
                         const store = storesMap.get(storeName);
+                        // Parse URL to handle stringified JSON arrays
+                        const parsed = parseImageUrl(imageUrl);
                         store.items.push({
-                            url: imageUrl,
+                            url: parsed.url || imageUrl, // Keep original/single URL
+                            urlArray: parsed.images || null, // Store array if parsed
                             info: item.info || item.text || item.caption || item.description || '',
                             price: item.price || item.قیمت || null
                         });
@@ -4572,7 +5065,16 @@
                 storeFolder.className = 'store-folder';
                 
                 // Use the first image as the folder preview
-                const previewImage = storeData.items.length > 0 ? storeData.items[0].url : '';
+                // If item has urlArray, use first image from array; otherwise use url
+                let previewImage = '';
+                if (storeData.items.length > 0) {
+                    const firstItem = storeData.items[0];
+                    if (firstItem.urlArray && firstItem.urlArray.length > 0) {
+                        previewImage = firstItem.urlArray[0];
+                    } else {
+                        previewImage = firstItem.url || '';
+                    }
+                }
                 
                 // Format نتیجه text: make numbers bigger, bold, green and fancy
                 let formattedResult = '';
@@ -4595,7 +5097,8 @@
                     نتیجه: storeData.summary ? storeData.summary.resultText : null,
                     store_info: storeData.storeInfo || null,
                     images: storeData.items.map(item => ({
-                        url: item.url,
+                        url: item.urlArray && item.urlArray.length > 0 ? item.urlArray[0] : item.url,
+                        urlArray: item.urlArray || null, // Keep array for carousel in detail page
                         info: item.info || ''
                     }))
                 };
@@ -4738,12 +5241,40 @@
                         imageInfo = '';
                     }
                     
+                    // Check if imageData has urlArray (multiple images) or parse URL
+                    let imagesArray = null;
+                    if (imageData.urlArray && Array.isArray(imageData.urlArray)) {
+                        imagesArray = imageData.urlArray;
+                    } else {
+                        // Parse URL to check if it's a stringified JSON array
+                        const parsed = parseImageUrl(imageData.url);
+                        if (parsed.images && parsed.images.length > 1) {
+                            imagesArray = parsed.images;
+                        }
+                    }
+                    
                     const imageItem = document.createElement('div');
                     imageItem.className = 'delete-edit-image-item';
-                    imageItem.innerHTML = `
-                        <img src="${imageData.url}" alt="${storeName}" />
-                        ${imageInfo ? `<div class="delete-edit-image-caption">${imageInfo}</div>` : ''}
-                    `;
+                    
+                    // If multiple images, create carousel; otherwise single image
+                    if (imagesArray && imagesArray.length > 1) {
+                        const carouselContainer = createImageCarousel(imagesArray, imageInfo);
+                        imageItem.appendChild(carouselContainer);
+                    } else {
+                        // Single image
+                        const img = document.createElement('img');
+                        img.src = imageData.urlArray && imageData.urlArray.length > 0 ? imageData.urlArray[0] : imageData.url;
+                        img.alt = storeName;
+                        imageItem.appendChild(img);
+                        
+                        if (imageInfo) {
+                            const caption = document.createElement('div');
+                            caption.className = 'delete-edit-image-caption';
+                            caption.textContent = imageInfo;
+                            imageItem.appendChild(caption);
+                        }
+                    }
+                    
                     storeDetailProducts.appendChild(imageItem);
                 });
             }
