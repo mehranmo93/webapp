@@ -2754,7 +2754,7 @@
         const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
-        const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
+        const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
         
@@ -3591,6 +3591,20 @@
             }
             
             return { url: url, images: null };
+        }
+
+        // Expand product URL: if last path segment is a number N, return [url/0, url/1, ..., url/(N-1)]
+        function expandProductUrl(url) {
+            const trimmed = (url && typeof url === 'string') ? url.trim() : '';
+            if (!trimmed) return [];
+            const pathParts = trimmed.split('/').filter(Boolean);
+            const lastSegment = pathParts[pathParts.length - 1];
+            const n = parseInt(lastSegment, 10);
+            if (isNaN(n) || n < 1) return [trimmed];
+            const baseUrl = trimmed.replace(/\/+$/, '');
+            const urls = [];
+            for (let i = 0; i < n; i++) urls.push(baseUrl + '/' + i);
+            return urls;
         }
 
         function openFullScreenImageViewer(imageUrls, startIndex) {
@@ -6514,7 +6528,7 @@
                         setTimeout(resolve, 150);
                     });
                     
-                    const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/0bb445e1-3e17-4af3-b6f5-668723e9a53c', {
+                    const response = await fetch(ADMIN_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -6544,46 +6558,41 @@
                 
                 const data = await response.json();
                 
-                // Display images with text beneath each image
+                // Helper: expand URL (e.g. .../2/2 -> [.../2/2/0, .../2/2/1]) and create carousel or single image
+                function appendProductImage(imageUrl, caption) {
+                    const expanded = expandProductUrl(imageUrl);
+                    if (expanded.length > 1) {
+                        const imageContent = createImageContent({ images: expanded, caption: caption });
+                        appendMessage('bot', imageContent);
+                    } else if (expanded.length === 1) {
+                        const imageContent = createImageContent({ url: expanded[0], caption: caption });
+                        appendMessage('bot', imageContent);
+                    }
+                }
+
+                // Display images: expand each URL by last path number and show as carousel (scroll left/right)
                 if (data && Array.isArray(data) && data.length > 0) {
-                    // If response is an array of images
                     data.forEach(item => {
-                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
-                        
-                        if (imageUrl) {
-                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
-                            appendMessage('bot', imageContent);
-                        }
+                        const imageUrl = typeof item === 'string' ? item : (item.url || item.image || item.image_url || item.photo || item.src);
+                        const caption = typeof item === 'object' && item !== null ? (item.caption || item.text || item.info || item.title || item.name || item.description || '') : '';
+                        if (imageUrl) appendProductImage(imageUrl, caption);
                     });
                 } else if (data.items && Array.isArray(data.items)) {
-                    // If response has items array
                     data.items.forEach(item => {
-                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
-                        
-                        if (imageUrl) {
-                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
-                            appendMessage('bot', imageContent);
-                        }
+                        const imageUrl = typeof item === 'string' ? item : (item.url || item.image || item.image_url || item.photo || item.src);
+                        const caption = typeof item === 'object' && item !== null ? (item.caption || item.text || item.info || item.title || item.name || item.description || '') : '';
+                        if (imageUrl) appendProductImage(imageUrl, caption);
                     });
                 } else if (data.images && Array.isArray(data.images)) {
-                    // If response has images array
                     data.images.forEach(item => {
-                        const imageUrl = item.url || item.image || item.image_url || item.photo || item.src;
-                        const caption = item.caption || item.text || item.info || item.title || item.name || item.description || '';
-                        
-                        if (imageUrl) {
-                            const imageContent = createImageContent({ url: imageUrl, caption: caption });
-                            appendMessage('bot', imageContent);
-                        }
+                        const imageUrl = typeof item === 'string' ? item : (item.url || item.image || item.image_url || item.photo || item.src);
+                        const caption = typeof item === 'object' && item !== null ? (item.caption || item.text || item.info || item.title || item.name || item.description || '') : '';
+                        if (imageUrl) appendProductImage(imageUrl, caption);
                     });
                 } else if (data.url || data.image || data.image_url || data.photo) {
-                    // Single image response
                     const imageUrl = data.url || data.image || data.image_url || data.photo;
                     const caption = data.caption || data.text || data.info || data.title || data.name || data.description || '';
-                    const imageContent = createImageContent({ url: imageUrl, caption: caption });
-                    appendMessage('bot', imageContent);
+                    appendProductImage(imageUrl, caption);
                 } else {
                     // No images found
                     appendMessage('bot', 'محصولی یافت نشد.');
@@ -7250,13 +7259,13 @@
                 images = data.items;
             } else if (data.results && Array.isArray(data.results)) {
                 images = data.results;
-            } else if (data.url || data.image) {
+            } else if (data.url || data.image || data.image_url || data.photo) {
                 // Single image
                 images = [{
                     url: data.url || data.image || data.image_url || data.photo,
-                    caption: data.caption || data.description || data.text || ''
+                    caption: data.caption || data.description || data.text || data.info || ''
                 }];
-            } else if (typeof data === 'object') {
+            } else if (typeof data === 'object' && data !== null) {
                 // Try to extract image from object
                 const url = data.url || data.image || data.image_url || data.photo;
                 if (url) {
@@ -7267,28 +7276,58 @@
                 }
             }
 
-            if (images.length === 0) {
+            // Normalize images into objects with expanded URL arrays for carousel support
+            const normalizedImages = images.map(item => {
+                if (typeof item === 'string') {
+                    const url = item;
+                    const caption = '';
+                    const expanded = expandProductUrl(url);
+                    return {
+                        originalUrl: url,
+                        urls: expanded.length ? expanded : [url],
+                        caption: caption,
+                        originalData: item
+                    };
+                } else {
+                    const url = item.url || item.image || item.image_url || item.photo;
+                    const caption = item.caption || item.description || item.text || item.info || '';
+                    const expanded = expandProductUrl(url);
+                    return {
+                        originalUrl: url,
+                        urls: expanded.length ? expanded : (url ? [url] : []),
+                        caption: caption,
+                        originalData: item
+                    };
+                }
+            }).filter(item => item.urls && item.urls.length > 0);
+
+            if (normalizedImages.length === 0) {
                 deleteEditResults.innerHTML = '<div class="delete-edit-empty">نتیجه‌ای یافت نشد</div>';
                 return;
             }
 
-            images.forEach((imageData, index) => {
+            normalizedImages.forEach((imageData, index) => {
                 const imageItem = document.createElement('div');
                 imageItem.className = 'delete-edit-image-item';
                 imageItem.dataset.index = index;
                 
-                const img = document.createElement('img');
-                img.src = imageData.url || imageData.image || imageData.image_url || imageData.photo;
-                img.alt = imageData.caption || imageData.description || imageData.text || '';
-                img.onerror = function() {
-                    this.style.display = 'none';
-                };
+                // If multiple URLs, show carousel like main page
+                if (imageData.urls.length > 1) {
+                    const carouselContainer = createImageCarousel(imageData.urls, imageData.caption);
+                    imageItem.appendChild(carouselContainer);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = imageData.urls[0];
+                    img.alt = imageData.caption || '';
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                    imageItem.appendChild(img);
+                }
                 
                 const caption = document.createElement('div');
                 caption.className = 'delete-edit-image-caption';
-                caption.textContent = imageData.caption || imageData.description || imageData.text || imageData.info || '';
-                
-                imageItem.appendChild(img);
+                caption.textContent = imageData.caption || '';
                 imageItem.appendChild(caption);
                 
                 imageItem.addEventListener('click', function() {
@@ -7300,10 +7339,10 @@
                     // Add selection to clicked item
                     this.classList.add('selected');
                     selectedImageData = {
-                        url: imageData.url || imageData.image || imageData.image_url || imageData.photo,
-                        caption: imageData.caption || imageData.description || imageData.text || imageData.info || '',
+                        url: imageData.originalUrl || (imageData.urls && imageData.urls[0]) || '',
+                        caption: imageData.caption || '',
                         index: index,
-                        originalData: imageData
+                        originalData: imageData.originalData
                     };
                     
                     // Enable action buttons
