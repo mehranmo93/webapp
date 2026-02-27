@@ -7599,40 +7599,45 @@
                             productDescriptionInput.value = data.text;
                         }
                         
-                        // Fill the image if provided - add to uploaded images array
-                        if (data.image || data.image_url || data.url || data.photo || selectedImageData?.url) {
-                            const imageUrl = data.image || data.image_url || data.url || data.photo || selectedImageData.url;
-                            
-                            // Fetch the image and convert to File for the input
+                        // Fill the image(s) if provided - add to uploaded images array
+                        uploadedImages = [];
+                        if (data.image || data.image_url || data.url || data.photo || (selectedImageData && selectedImageData.url)) {
+                            const baseImageUrl = data.image || data.image_url || data.url || data.photo || selectedImageData.url;
+                            const urlsToLoad = expandProductUrl(baseImageUrl);
+                            const finalUrls = urlsToLoad.length > 0 ? urlsToLoad : [baseImageUrl];
+
                             try {
-                                const imageResponse = await fetch(imageUrl);
-                                const imageBlob = await imageResponse.blob();
-                                
-                                // Get file extension from URL or default to jpg
-                                const urlParts = imageUrl.split('.');
-                                const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1].split('?')[0] : 'jpg';
-                                const mimeType = imageBlob.type || `image/${extension === 'png' ? 'png' : 'jpeg'}`;
-                                
-                                // Create File object
-                                const fileName = `edit-image.${extension}`;
-                                const imageFile = new File([imageBlob], fileName, { type: mimeType });
-                                
-                                // Convert to data URL and add to uploaded images
-                                const reader = new FileReader();
-                                reader.onload = function(e) {
-                                    uploadedImages.push({
-                                        file: imageFile,
-                                        dataUrl: e.target.result,
-                                        name: fileName
-                                    });
-                                    renderImageGallery();
-                                };
-                                reader.readAsDataURL(imageFile);
+                                for (const imageUrl of finalUrls) {
+                                    const imageResponse = await fetch(imageUrl);
+                                    const imageBlob = await imageResponse.blob();
+
+                                    // Get file extension from URL or default to jpg
+                                    const urlParts = imageUrl.split('.');
+                                    const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1].split('?')[0] : 'jpg';
+                                    const mimeType = imageBlob.type || `image/${extension === 'png' ? 'png' : 'jpeg'}`;
+
+                                    // Create File object
+                                    const fileName = `edit-image-${Date.now()}.${extension}`;
+                                    const imageFile = new File([imageBlob], fileName, { type: mimeType });
+
+                                    // Convert to data URL and add to uploaded images
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        uploadedImages.push({
+                                            file: imageFile,
+                                            dataUrl: e.target.result,
+                                            name: fileName
+                                        });
+                                        renderImageGallery();
+                                    };
+                                    reader.readAsDataURL(imageFile);
+                                }
                             } catch (error) {
                                 console.error('Error loading image for edit:', error);
+                                renderImageGallery();
                             }
                         } else {
-                            // Clear images if no image in edit
+                            // Clear images if no image in edit response
                             uploadedImages = [];
                             renderImageGallery();
                         }
