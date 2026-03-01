@@ -2722,6 +2722,10 @@
                 webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/053e875b-1a42-4d6a-9670-8289076dac38'
             }
         };
+        // Alias so "انلاین" (without hamza) resolves to same webhook
+        if (!cityData['انلاین']) {
+            cityData['انلاین'] = cityData['آنلاین'];
+        }
         
         // Function to find city by store name
         function findCityByStore(storeName) {
@@ -2740,17 +2744,17 @@
         function getWebhookUrlByCity(city) {
             if (!city || city === '') {
                 // Default URL for "همه شهرها" or no city selected
-                return 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
+                return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
             }
             if (cityData[city] && cityData[city].webhookUrl) {
                 return cityData[city].webhookUrl;
             }
             // Default URL for any other city
-            return 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
+            return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
         }
         
         let selectedCity = null; // No city selected by default
-        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
+        let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
         const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
@@ -3264,7 +3268,7 @@
                 Object.values(cityData).forEach(cityInfo => {
                     stores.push(...cityInfo.stores);
                 });
-                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
                 
                 // Update store dropdown
                 storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
@@ -4377,7 +4381,7 @@
             if (selectedCity) {
                 WEBHOOK_URL = getWebhookUrlByCity(selectedCity);
             } else {
-                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc6b217a-7c36-4532-830e-1a592ef03390';
+                WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
             }
 
             try {
@@ -4963,8 +4967,10 @@
                 // Do NOT require imageUrl to exist - include all similar items
                 if (isSimilarItem(item)) {
                     const imageUrl = item.image || item.url || item.image_url || item.photo || '';
+                    const expanded = expandProductUrl(imageUrl);
                     similarItems.push({
-                        url: imageUrl,
+                        url: expanded[0] || imageUrl,
+                        urlArray: expanded.length > 0 ? expanded : null,
                         info: item.info || item.text || item.caption || item.description || '',
                         price: item.price || item.قیمت || null,
                         storeName: getStoreName(item),
@@ -4992,8 +4998,10 @@
                 responseArray.forEach((item) => {
                     if (!isStatusObject(item) && isSimilarItem(item)) {
                         const imageUrl = item.image || item.url || item.image_url || item.photo || '';
+                        const expanded = expandProductUrl(imageUrl);
                         similarItems.push({
-                            url: imageUrl,
+                            url: expanded[0] || imageUrl,
+                            urlArray: expanded.length > 0 ? expanded : null,
                             info: item.info || item.text || item.caption || item.description || '',
                             price: item.price || item.قیمت || null,
                             storeName: getStoreName(item),
@@ -5069,30 +5077,26 @@
                 const similarItem = document.createElement('div');
                 similarItem.className = 'similar-item';
                 
-                // Header with store info and map button
+                // Header: store name and address near نقشه (always show row so name/address visible when provided)
                 const header = document.createElement('div');
                 header.className = 'similar-item-header';
-                
+
                 const storeInfoDiv = document.createElement('div');
                 storeInfoDiv.className = 'similar-item-store-info';
-                
-                if (item.storeName) {
-                    const storeNameDiv = document.createElement('div');
-                    storeNameDiv.className = 'similar-item-store-name';
-                    storeNameDiv.textContent = item.storeName;
-                    storeInfoDiv.appendChild(storeNameDiv);
-                }
-                
-                if (item.storeInfo) {
-                    const storeInfoText = document.createElement('div');
-                    storeInfoText.className = 'similar-item-store-info-text';
-                    storeInfoText.textContent = item.storeInfo;
-                    storeInfoDiv.appendChild(storeInfoText);
-                }
-                
+
+                const storeNameDiv = document.createElement('div');
+                storeNameDiv.className = 'similar-item-store-name';
+                storeNameDiv.textContent = item.storeName && String(item.storeName).trim() ? item.storeName.trim() : '—';
+                storeInfoDiv.appendChild(storeNameDiv);
+
+                const storeInfoText = document.createElement('div');
+                storeInfoText.className = 'similar-item-store-info-text';
+                storeInfoText.textContent = item.storeInfo && String(item.storeInfo).trim() ? item.storeInfo.trim() : '—';
+                storeInfoDiv.appendChild(storeInfoText);
+
                 header.appendChild(storeInfoDiv);
-                
-                // Add نقشه button - opens Google Maps search
+
+                // نقشه button - opens Google Maps search
                 const mapBtn = document.createElement('button');
                 mapBtn.className = 'similar-item-map-btn';
                 mapBtn.textContent = 'نقشه';
@@ -5117,11 +5121,16 @@
                 header.appendChild(mapBtn);
                 
                 similarItem.appendChild(header);
-                
-                // Image
-                if (item.url) {
+
+                // Image(s): carousel if urlArray has multiple, else single image
+                const urls = (item.urlArray && item.urlArray.length > 0) ? item.urlArray : (item.url ? [item.url] : []);
+                if (urls.length > 1) {
+                    const carouselContainer = createImageCarousel(urls, '');
+                    carouselContainer.style.marginBottom = '8px';
+                    similarItem.appendChild(carouselContainer);
+                } else if (urls.length === 1) {
                     const image = document.createElement('img');
-                    image.src = item.url;
+                    image.src = urls[0];
                     image.alt = item.storeName || 'تصویر';
                     image.className = 'similar-item-image';
                     image.onerror = function() {
@@ -5129,7 +5138,7 @@
                     };
                     similarItem.appendChild(image);
                 }
-                
+
                 // Details (info and price)
                 const details = document.createElement('div');
                 details.className = 'similar-item-details';
@@ -5214,8 +5223,10 @@
                 if (isSimilarItem(item)) {
                     const imageUrl = item.image || item.url || item.image_url || item.photo || '';
                     if (imageUrl) {
+                        const expanded = expandProductUrl(imageUrl);
                         similarItems.push({
-                            url: imageUrl,
+                            url: expanded[0] || imageUrl,
+                            urlArray: expanded.length > 0 ? expanded : null,
                             info: item.info || item.text || item.caption || item.description || '',
                             price: item.price || item.قیمت || null,
                             storeName: getStoreName(item),
@@ -5226,14 +5237,14 @@
                     }
                     return; // Skip processing for store folders
                 }
-                
+
                 // Handle product items (images with url)
                 // Items with simmilar === "undefiend" (typo) or undefined/missing go to store folders
                 // Only items with simmilar === "موارد مشابه" have already been handled above
                 const imageUrl = item.image || item.url || item.image_url || item.photo || '';
                 if (imageUrl) {
                     const storeName = getStoreName(item);
-                    
+
                     // Add all items with images to store folders (unless they're similar items)
                     if (storeName) {
                         if (!storesMap.has(storeName)) {
@@ -5246,11 +5257,13 @@
                             });
                         }
                         const store = storesMap.get(storeName);
-                        // Parse URL to handle stringified JSON arrays
+                        // Expand URL: last path segment = N means N images at url/0, url/1, ... url/(N-1)
+                        const expanded = expandProductUrl(imageUrl);
                         const parsed = parseImageUrl(imageUrl);
+                        const urlArray = expanded.length > 0 ? expanded : (parsed.images || null);
                         store.items.push({
-                            url: parsed.url || imageUrl, // Keep original/single URL
-                            urlArray: parsed.images || null, // Store array if parsed
+                            url: (urlArray && urlArray[0]) || parsed.url || imageUrl,
+                            urlArray: urlArray,
                             info: item.info || item.text || item.caption || item.description || '',
                             price: item.price || item.قیمت || null
                         });
