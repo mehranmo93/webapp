@@ -4562,8 +4562,11 @@
                                         if (hasImage) {
                                             const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
                                             const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
+                                            const expanded = expandProductUrl(imageUrl);
                                             const parsed = parseImageUrl(imageUrl);
-                                            renderMessageContent(botPlaceholder, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
+                                            const url = (expanded.length > 0 ? expanded[0] : parsed.url) || imageUrl;
+                                            const images = expanded.length > 1 ? expanded : (parsed.images || null);
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: url, images: images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -4589,8 +4592,11 @@
                                         if (hasImage) {
                                             const imageUrl = item.image || item.url || item.image_url || item.photo;
                                             const caption = item.info || item.text || item.caption || item.description || '';
+                                            const expanded = expandProductUrl(imageUrl);
                                             const parsed = parseImageUrl(imageUrl);
-                                            renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
+                                            const url = (expanded.length > 0 ? expanded[0] : parsed.url) || imageUrl;
+                                            const images = expanded.length > 1 ? expanded : (parsed.images || null);
+                                            renderMessageContent(extraMessage, { type: 'image', url: url, images: images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -4644,8 +4650,11 @@
                                         if (hasImage) {
                                             const imageUrl = firstNormal.image || firstNormal.url || firstNormal.image_url || firstNormal.photo;
                                             const caption = firstNormal.info || firstNormal.text || firstNormal.caption || firstNormal.description || firstNormal.نتیجه || firstNormal.result || firstNormal.message || '';
+                                            const expanded = expandProductUrl(imageUrl);
                                             const parsed = parseImageUrl(imageUrl);
-                                            renderMessageContent(botPlaceholder, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
+                                            const url = (expanded.length > 0 ? expanded[0] : parsed.url) || imageUrl;
+                                            const images = expanded.length > 1 ? expanded : (parsed.images || null);
+                                            renderMessageContent(botPlaceholder, { type: 'image', url: url, images: images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -4671,8 +4680,11 @@
                                         if (hasImage) {
                                             const imageUrl = item.image || item.url || item.image_url || item.photo;
                                             const caption = item.info || item.text || item.caption || item.description || '';
+                                            const expanded = expandProductUrl(imageUrl);
                                             const parsed = parseImageUrl(imageUrl);
-                                            renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
+                                            const url = (expanded.length > 0 ? expanded[0] : parsed.url) || imageUrl;
+                                            const images = expanded.length > 1 ? expanded : (parsed.images || null);
+                                            renderMessageContent(extraMessage, { type: 'image', url: url, images: images, caption: caption });
                                         } else {
                                             const responseItem = {
                                                 type: 'text',
@@ -4823,11 +4835,14 @@
                                 if (hasImage) {
                                     const extraMessage = appendMessage('bot', '');
                                     extraMessage.setAttribute('data-request-id', requestId);
-                                    // Convert item to response format for renderMessageContent
+                                    // Expand URL: .../104/2 -> [.../104/2/0, .../104/2/1] so images show in carousel
                                     const imageUrl = item.image || item.url || item.image_url || item.photo;
                                     const caption = item.info || item.text || item.caption || item.description || '';
+                                    const expanded = expandProductUrl(imageUrl);
                                     const parsed = parseImageUrl(imageUrl);
-                                    renderMessageContent(extraMessage, { type: 'image', url: parsed.url, images: parsed.images, caption: caption });
+                                    const url = (expanded.length > 0 ? expanded[0] : parsed.url) || imageUrl;
+                                    const images = expanded.length > 1 ? expanded : (parsed.images || null);
+                                    renderMessageContent(extraMessage, { type: 'image', url: url, images: images, caption: caption });
                                     messageElement = extraMessage;
                                 }
                             });
