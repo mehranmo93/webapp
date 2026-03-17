@@ -2711,7 +2711,7 @@
         const cityData = {
             'آمل': {
                 stores: ['جواهری دژگان', 'جواهری ستارزاده', 'جواهری محمدی'],
-                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b'
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b'
             },
             'بابل': {
                 stores: ['جواهری توکلی', 'جواهری امیری'],
@@ -2755,7 +2755,7 @@
         
         let selectedCity = null; // No city selected by default
         let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
-        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/df17942e-9b77-4e51-84e5-6301cd0a930b';
+        const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
         const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
@@ -5463,6 +5463,13 @@
                 allData: storeGroup
             };
             
+            // Update address / website button label based on selected city
+            if (storeDetailAddressBtn) {
+                const cityKey = selectedCity || '';
+                const isOnlineCity = cityKey === 'آنلاین' || cityKey === 'انلاین';
+                storeDetailAddressBtn.textContent = isOnlineCity ? 'سایت' : 'نقشه';
+            }
+
             // Hide main content and show store detail page
             mainContentArea.style.display = 'none';
             document.querySelector('.search-bar').style.display = 'none';
@@ -5553,41 +5560,135 @@
             });
         }
         
-        // Store detail address button - fetches latitude and longitude from backend and opens Google Maps
+        // Store detail address / website button
         if (storeDetailAddressBtn) {
             storeDetailAddressBtn.addEventListener('click', async function() {
                 if (!currentStoreData || !currentStoreData.store_name) {
                     alert('اطلاعات فروشگاه در دسترس نیست');
                     return;
                 }
-                
+
+                const cityKey = selectedCity || '';
+                const isOnlineCity = cityKey === 'آنلاین' || cityKey === 'انلاین';
+                const isWebsiteMode = isOnlineCity;
+
                 storeDetailAddressBtn.disabled = true;
                 const originalText = storeDetailAddressBtn.textContent;
                 storeDetailAddressBtn.textContent = 'در حال بارگذاری...';
                 
                 try {
                     // Use the webhook URL based on selected city, or default
-                    const addressWebhookUrl = selectedCity && cityData[selectedCity] 
-                        ? cityData[selectedCity].webhookUrl 
+                    const addressWebhookUrl = selectedCity && cityData[selectedCity]
+                        ? cityData[selectedCity].webhookUrl
                         : WEBHOOK_URL;
-                    
+
+                    // Build payload: for online city send website action, otherwise address
+                    const basePayload = {
+                        store_name: currentStoreData.store_name,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    if (isWebsiteMode) {
+                        // Try to extract website from store data or info text
+                        const allData = currentStoreData.allData || {};
+                        const possibleWebsite =
+                            allData.website ||
+                            allData.site ||
+                            allData.سایت ||
+                            allData.store_website ||
+                            allData.url ||
+                            allData.link ||
+                            storeDetailInfo.textContent ||
+                            '';
+
+                        basePayload.action = 'website';
+                        basePayload.website = possibleWebsite;
+                    } else {
+                        basePayload.action = 'address';
+                    }
+
                     const response = await fetch(addressWebhookUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(addTrackingFields({
-                            action: 'address',
-                            store_name: currentStoreData.store_name,
-                            timestamp: new Date().toISOString()
-                        }))
+                        body: JSON.stringify(addTrackingFields(basePayload))
                     });
                     
                     if (!response.ok) {
-                        throw new Error('خطا در دریافت آدرس');
+                        throw new Error(isWebsiteMode ? 'خطا در دریافت لینک سایت' : 'خطا در دریافت آدرس');
                     }
                     
                     const responseData = await response.json();
+
+                    if (isWebsiteMode) {
+                        // Extract website/link from various possible fields
+                        function extractWebsite(data) {
+                            if (!data) return null;
+
+                            // If backend returns plain string URL
+                            if (typeof data === 'string') return data;
+
+                            // Direct properties on object
+                            if (data.url && typeof data.url === 'string') return data.url;
+                            if (data.link && typeof data.link === 'string') return data.link;
+                            if (data.Link && typeof data.Link === 'string') return data.Link; // n8n "Link" field
+                            if (data.website && typeof data.website === 'string') return data.website;
+                            if (data.Website && typeof data.Website === 'string') return data.Website;
+                            if (data.سایت && typeof data.سایت === 'string') return data.سایت;
+                            if (data.website_link && typeof data.website_link === 'string') return data.website_link;
+
+                            // Common text/result fields sometimes used to hold URL string
+                            if (data.result && typeof data.result === 'string') return data.result;
+                            if (data.text && typeof data.text === 'string') return data.text;
+
+                            // Nested structures: data, response, result
+                            if (data.data) {
+                                const nested = extractWebsite(data.data);
+                                if (nested) return nested;
+                            }
+                            if (data.response) {
+                                const nested = extractWebsite(data.response);
+                                if (nested) return nested;
+                            }
+                            if (data.result && typeof data.result === 'object') {
+                                const nested = extractWebsite(data.result);
+                                if (nested) return nested;
+                            }
+
+                            // Arrays: look for first non-empty website inside
+                            if (Array.isArray(data) && data.length > 0) {
+                                for (let i = 0; i < data.length; i++) {
+                                    const nested = extractWebsite(data[i]);
+                                    if (nested) return nested;
+                                }
+                            }
+
+                            return null;
+                        }
+
+                        const websiteUrl = extractWebsite(responseData);
+                        if (websiteUrl && typeof websiteUrl === 'string') {
+                            // Normalize and log for debugging
+                            let target = websiteUrl.trim();
+                            if (typeof console !== 'undefined' && console.log) {
+                                console.log('[website] raw response:', responseData);
+                                console.log('[website] extracted url:', target);
+                            }
+                            // If backend returns without protocol, assume https
+                            if (!/^https?:\/\//i.test(target)) {
+                                target = 'https://' + target;
+                            }
+                            // Open in new tab
+                            window.open(target, '_blank', 'noopener,noreferrer');
+                        } else {
+                            if (typeof console !== 'undefined' && console.warn) {
+                                console.warn('[website] no URL found in response:', responseData);
+                            }
+                            alert('لینک سایت در پاسخ پیدا نشد');
+                        }
+                        return;
+                    }
                     
                     // Helper function to extract coordinates from various response structures
                     function extractCoordinates(data) {
