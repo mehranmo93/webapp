@@ -2525,17 +2525,37 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">اطلاعات فروشگاه شامل تلفن تماس و آدرس</label>
+                        <div style="margin-top: 12px;">
+                            <div class="form-label" style="font-size: 14px; margin-bottom: 10px; font-weight: 600;">نوع مغازه</div>
+
+                            <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 0;">
+                                    <input type="radio" id="storeSetupTypeOnline" name="storeSetupType" value="انلاین" required />
+                                    <span>انلاین</span>
+                                </label>
+
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 0;">
+                                    <input type="radio" id="storeSetupTypeInPerson" name="storeSetupType" value="حضوری" required />
+                                    <span>حضوری</span>
+                                </label>
+                            </div>
+                        </div>
                         <input type="tel" class="form-input" id="storeSetupPhone" placeholder="تلفن تماس" required />
                         <input type="text" class="form-input" id="storeSetupCity" placeholder="نام شهر" required style="margin-top: 12px;" />
                         <input type="text" class="form-input" id="storeSetupAddress" placeholder="آدرس کامل: شهر، خیابان، ..." required style="margin-top: 12px;" />
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="storeSetupLocationSection">
                         <button type="button" class="form-submit-btn" id="storeSetupLocationBtn" style="background: var(--black-primary); color: var(--gold-primary); border: 2px solid var(--gold-primary); margin-top: 12px;">
                             ارسال موقعیت مکانی
                         </button>
                         <div id="storeSetupLocationDisplay" style="margin-top: 12px; padding: 12px; background: var(--gray-light); border-radius: 8px; display: none;">
                             <span id="storeSetupLocationText">موقعیت دریافت نشده</span>
                         </div>
+                    </div>
+
+                    <div class="form-group" id="storeSetupWebsiteSection" style="display: none;">
+                        <label class="form-label" for="storeSetupWebsite">آدرس وب سایت فروشگاه</label>
+                        <input type="text" class="form-input" id="storeSetupWebsite" placeholder="وب سایت مغازه (مثلا: www.google.com)" inputmode="url" style="margin-top: 12px;" />
                     </div>
                     <button type="submit" class="form-submit-btn" id="storeSetupSubmitBtn">ارسال</button>
                 </form>
@@ -2757,7 +2777,7 @@
         let WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390'; // Default URL
         const CONTACT_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/df17942e-9b77-4e51-84e5-6301cd0a930b';
         const GOLD_PRICE_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/bc5d867f-e95f-412f-921f-1819407f27fa';
-        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
+        const LOGIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/de4e77d3-0c12-4309-8dd3-1f657b62bfb6';
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
@@ -3102,6 +3122,11 @@
         const storeSetupLocationBtn = document.getElementById('storeSetupLocationBtn');
         const storeSetupLocationDisplay = document.getElementById('storeSetupLocationDisplay');
         const storeSetupLocationText = document.getElementById('storeSetupLocationText');
+        const storeSetupLocationSection = document.getElementById('storeSetupLocationSection');
+        const storeSetupWebsiteSection = document.getElementById('storeSetupWebsiteSection');
+        const storeSetupWebsiteInput = document.getElementById('storeSetupWebsite');
+        const storeSetupTypeOnlineRadio = document.getElementById('storeSetupTypeOnline');
+        const storeSetupTypeInPersonRadio = document.getElementById('storeSetupTypeInPerson');
         const passwordResetBtn = document.getElementById('passwordResetBtn');
         const closeContactModalBtn = document.getElementById('closeContactModalBtn');
         const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
@@ -6410,6 +6435,41 @@
             selectedLocationInfo.style.display = 'block';
         }
 
+        function updateStoreSetupTypeSectionUI() {
+            const isOnline = !!(storeSetupTypeOnlineRadio && storeSetupTypeOnlineRadio.checked);
+
+            if (isOnline) {
+                // Online: hide map/location picker, show website input instead.
+                if (storeSetupLocationSection) storeSetupLocationSection.style.display = 'none';
+                if (storeSetupWebsiteSection) storeSetupWebsiteSection.style.display = 'block';
+
+                if (storeSetupWebsiteInput) {
+                    storeSetupWebsiteInput.required = true;
+                    storeSetupWebsiteInput.focus();
+                }
+
+                if (storeSetupLocationDisplay) storeSetupLocationDisplay.style.display = 'none';
+                storeLocationData = null;
+            } else {
+                // In-person (or no selection yet): show map/location picker.
+                if (storeSetupLocationSection) storeSetupLocationSection.style.display = 'block';
+                if (storeSetupWebsiteSection) storeSetupWebsiteSection.style.display = 'none';
+
+                if (storeSetupWebsiteInput) {
+                    storeSetupWebsiteInput.required = false;
+                }
+            }
+        }
+
+        if (storeSetupTypeOnlineRadio) {
+            storeSetupTypeOnlineRadio.addEventListener('change', updateStoreSetupTypeSectionUI);
+        }
+        if (storeSetupTypeInPersonRadio) {
+            storeSetupTypeInPersonRadio.addEventListener('change', updateStoreSetupTypeSectionUI);
+        }
+        // Initial state (default: in-person section visible)
+        updateStoreSetupTypeSectionUI();
+
         // Store setup location button - opens Google Maps picker
         storeSetupLocationBtn.addEventListener('click', function() {
             locationPickerModal.classList.add('show');
@@ -6462,9 +6522,38 @@
             const storePhone = document.getElementById('storeSetupPhone').value.trim();
             const storeCity = document.getElementById('storeSetupCity').value.trim();
             const storeAddress = document.getElementById('storeSetupAddress').value.trim();
+            const storeTypeEl = document.querySelector('input[name="storeSetupType"]:checked');
+            const storeType = storeTypeEl ? storeTypeEl.value : '';
+            const storeWebsite = storeSetupWebsiteInput ? storeSetupWebsiteInput.value.trim() : '';
 
-            if (!username || !password || !mobile || !code || !storePhone || !storeCity || !storeAddress) {
+            if (!username || !password || !mobile || !code || !storePhone || !storeCity || !storeAddress || !storeType) {
                 alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            function normalizeWebsite(raw) {
+                const v = (raw || '').trim();
+                if (!v) return '';
+                // If user entered without protocol, assume https
+                if (!/^https?:\/\//i.test(v)) {
+                    return 'https://' + v;
+                }
+                return v;
+            }
+
+            function isWebsiteReasonable(normalizedUrl) {
+                const v = (normalizedUrl || '').trim();
+                if (!v) return false;
+                // Reject spaces (common user error) and require a dot in host-like part
+                const withoutProto = v.replace(/^https?:\/\//i, '');
+                if (/\s/.test(withoutProto)) return false;
+                return withoutProto.includes('.');
+            }
+
+            const storeWebsiteNormalized = storeType === 'انلاین' ? normalizeWebsite(storeWebsite) : '';
+
+            if (storeType === 'انلاین' && !isWebsiteReasonable(storeWebsiteNormalized)) {
+                alert('لطفاً آدرس معتبر وب سایت وارد کنید (مثلا: www.google.com)');
                 return;
             }
 
@@ -6491,7 +6580,9 @@
                         storePhone: storePhone,
                         storeCity: storeCity,
                         storeAddress: storeAddress,
-                        location: storeLocationData,
+                        storeType: storeType,
+                        storeWebsite: storeType === 'انلاین' ? storeWebsiteNormalized : '',
+                        location: storeType === 'حضوری' ? storeLocationData : null,
                         timestamp: new Date().toISOString()
                     }))
                 });
@@ -6521,12 +6612,14 @@
                             storeSetupForm.reset();
                             storeSetupLocationDisplay.style.display = 'none';
                             storeLocationData = null;
+                            updateStoreSetupTypeSectionUI();
                             storeSetupModal.classList.add('show'); // Ensure it's visible
                         } else if (nextPage === 'login' || nextPage === 'login/') {
                             // Redirect to login page
                             storeSetupForm.reset();
                             storeSetupLocationDisplay.style.display = 'none';
                             storeLocationData = null;
+                            updateStoreSetupTypeSectionUI();
                             storeSetupModal.classList.remove('show');
                             mainHeader.classList.remove('header-admin-mode');
                             adminDashboard.classList.remove('show');
@@ -6538,6 +6631,7 @@
                             storeSetupForm.reset();
                             storeSetupLocationDisplay.style.display = 'none';
                             storeLocationData = null;
+                            updateStoreSetupTypeSectionUI();
                             storeSetupModal.classList.remove('show');
                             mainHeader.classList.remove('header-admin-mode');
                             adminDashboard.classList.remove('show');
@@ -6551,6 +6645,7 @@
                             storeSetupForm.reset();
                             storeSetupLocationDisplay.style.display = 'none';
                             storeLocationData = null;
+                            updateStoreSetupTypeSectionUI();
                             storeSetupModal.classList.remove('show');
                             mainHeader.classList.remove('header-admin-mode');
                             adminDashboard.classList.remove('show');
@@ -6562,6 +6657,7 @@
                         storeSetupForm.reset();
                         storeSetupLocationDisplay.style.display = 'none';
                         storeLocationData = null;
+                        updateStoreSetupTypeSectionUI();
                         storeSetupModal.classList.remove('show');
                         mainContentArea.style.display = 'block';
                         document.querySelector('.search-bar').style.display = 'flex';
