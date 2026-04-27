@@ -73,10 +73,19 @@
             display: none;
         }
 
+        /* In admin mode, hide the left selector wrapper entirely so action buttons have full width */
+        .header-admin-mode .header-content > div:first-child {
+            display: none !important;
+        }
+
         .header-admin-buttons {
             display: none;
             gap: 12px;
-            flex: 1;
+            flex: 1 1 auto;
+            flex-wrap: nowrap;
+            justify-content: flex-end;
+            min-width: 0;
+            overflow: visible;
         }
 
         .header-admin-mode .header-admin-buttons {
@@ -87,8 +96,17 @@
             display: flex !important;
         }
 
+        /* Logged-in search page (not admin dashboard): show back button instead of menu */
+        .header-logged-search-mode .menu-btn {
+            display: none !important;
+        }
+        .header-logged-search-mode .back-btn {
+            display: flex !important;
+        }
+
         .header-admin-btn {
-            flex: 1;
+            flex: 0 0 130px;
+            width: 130px;
             padding: 0 24px;
             border: none;
             border-radius: 14px;
@@ -98,13 +116,14 @@
             transition: all 0.3s ease;
             text-align: center;
             height: 48px;
-            min-width: 160px;
+            min-width: 130px;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: var(--shadow-sm);
             letter-spacing: 0.3px;
             white-space: nowrap;
+            line-height: 1;
         }
 
         .header-admin-btn:active {
@@ -115,7 +134,7 @@
             background: linear-gradient(135deg, var(--black-primary) 0%, var(--black-secondary) 100%);
             color: var(--gold-primary);
             border: 2px solid var(--gold-primary);
-            min-width: 120px;
+            min-width: 130px;
             padding: 0 18px;
             font-size: 14px;
         }
@@ -134,6 +153,22 @@
         }
 
         .header-admin-btn-products:hover {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+            color: var(--black-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+        }
+
+        .header-admin-btn-update {
+            background: linear-gradient(135deg, var(--black-primary) 0%, var(--black-secondary) 100%);
+            color: var(--gold-primary);
+            border: 2px solid var(--gold-primary);
+            min-width: 130px;
+            padding: 0 16px;
+            font-size: 14px;
+        }
+
+        .header-admin-btn-update:hover {
             background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
             color: var(--black-primary);
             transform: translateY(-2px);
@@ -1457,15 +1492,18 @@
             background-color: #f5f5f5;
             z-index: 100;
             box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         }
 
         .admin-buttons-row {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .admin-buttons-row .admin-btn {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 0;
         }
 
         .admin-btn {
@@ -1483,6 +1521,45 @@
             justify-content: center;
             box-shadow: var(--shadow-md);
             letter-spacing: 0.3px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .header-admin-buttons {
+                gap: 8px;
+            }
+
+            .header-admin-btn {
+                flex: 0 0 118px;
+                width: 118px;
+                min-width: 118px;
+                font-size: 14px;
+                padding: 0 10px;
+                height: 44px;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .admin-buttons-bottom {
+                padding: 10px 12px;
+                gap: 8px;
+            }
+
+            .admin-buttons-row {
+                flex-direction: row;
+                gap: 8px;
+            }
+
+            .admin-buttons-row .admin-btn {
+                min-width: 0;
+            }
+
+            .admin-btn {
+                min-height: 48px;
+                font-size: 14px;
+                padding: 12px 14px;
+            }
         }
 
         .admin-btn:active {
@@ -2323,6 +2400,7 @@
                 </div>
             </div>
             <div class="header-admin-buttons">
+                <button class="header-admin-btn header-admin-btn-update" id="headerUpdatePricesBtn">آپدیت قیمت ها</button>
                 <button class="header-admin-btn header-admin-btn-products" id="headerProductsBtn">10 محصول آخر</button>
                 <button class="header-admin-btn header-admin-btn-support" id="headerSupportBtn">پشتیبانی</button>
             </div>
@@ -2365,7 +2443,7 @@
             </ul>
         </div>
         <div class="admin-buttons-bottom">
-            <button class="admin-btn admin-btn-update" id="updatePricesBtn">آپدیت قیمت ها</button>
+            <button class="admin-btn admin-btn-update" id="bankSearchBtn">جستوجو در بنک ها</button>
             <div id="updatePricesStatus" style="display: none; text-align: center; padding: 12px; color: var(--gold-primary); font-weight: 500; font-size: 15px; margin-top: 8px;"></div>
             <div class="admin-buttons-row">
                 <button class="admin-btn admin-btn-add" id="addBtn">افزودن</button>
@@ -2781,6 +2859,34 @@
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
+        let isBankSearchMode = false;
+
+        function getAllStoresLabel() {
+            return isBankSearchMode ? 'همه بنک ها' : 'همه مغازه ها';
+        }
+
+        function applySearchMode(mode) {
+            isBankSearchMode = mode === 'bank';
+            const allStoresLabel = getAllStoresLabel();
+            if (storeSelectorBtn && (!selectedStore || selectedStore === '')) {
+                storeSelectorBtn.textContent = allStoresLabel;
+            }
+            if (storeDropdown) {
+                const allOption = storeDropdown.querySelector('.store-option[data-store=""]');
+                if (allOption) {
+                    allOption.textContent = allStoresLabel;
+                }
+            }
+        }
+
+        function setLoggedInSearchMode(enabled) {
+            if (!mainHeader) return;
+            if (enabled) {
+                mainHeader.classList.add('header-logged-search-mode');
+            } else {
+                mainHeader.classList.remove('header-logged-search-mode');
+            }
+        }
         
         // Token and user management
         function getToken() {
@@ -2871,6 +2977,7 @@
             if (!isAuthenticated()) {
                 clearToken();
                 mainHeader.classList.remove('header-admin-mode');
+                setLoggedInSearchMode(false);
                 adminDashboard.classList.remove('show');
                 if (typeof addPage !== 'undefined' && addPage) {
                     addPage.classList.remove('show');
@@ -3141,7 +3248,8 @@
         const adminDashboard = document.getElementById('adminDashboard');
         const headerSupportBtn = document.getElementById('headerSupportBtn');
         const headerProductsBtn = document.getElementById('headerProductsBtn');
-        const updatePricesBtn = document.getElementById('updatePricesBtn');
+        const headerUpdatePricesBtn = document.getElementById('headerUpdatePricesBtn');
+        const bankSearchBtn = document.getElementById('bankSearchBtn');
         const deleteEditBtn = document.getElementById('deleteEditBtn');
         const addBtn = document.getElementById('addBtn');
         const supportModal = document.getElementById('supportModal');
@@ -3260,7 +3368,7 @@
                 WEBHOOK_URL = getWebhookUrlByCity(city);
                 
                 // Update store dropdown
-                storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
+                storeDropdown.innerHTML = `<div class="store-option" data-store="">${getAllStoresLabel()}</div>`;
                 stores.forEach(store => {
                     const option = document.createElement('div');
                     option.className = 'store-option';
@@ -3272,19 +3380,19 @@
                 // Only reset store if we're not preserving the selection, or if current store doesn't belong to this city
                 if (!preserveStoreSelection) {
                 selectedStore = '';
-                storeSelectorBtn.textContent = 'همه مغازه ها';
+                storeSelectorBtn.textContent = getAllStoresLabel();
             } else {
                     // Check if current selected store belongs to this city
                     if (selectedStore && selectedStore !== '' && !stores.includes(selectedStore)) {
                         // Store doesn't belong to this city, reset to "همه مغازه ها"
                         selectedStore = '';
-                        storeSelectorBtn.textContent = 'همه مغازه ها';
+                        storeSelectorBtn.textContent = getAllStoresLabel();
                     } else if (selectedStore && selectedStore !== '') {
                         // Store belongs to this city, keep it selected
                         storeSelectorBtn.textContent = selectedStore;
                     } else {
                         // No store was selected, set to "همه مغازه ها"
-                        storeSelectorBtn.textContent = 'همه مغازه ها';
+                        storeSelectorBtn.textContent = getAllStoresLabel();
                     }
                 }
             } else {
@@ -3296,7 +3404,7 @@
                 WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
                 
                 // Update store dropdown
-                storeDropdown.innerHTML = '<div class="store-option" data-store="">همه مغازه ها</div>';
+                storeDropdown.innerHTML = `<div class="store-option" data-store="">${getAllStoresLabel()}</div>`;
                 stores.forEach(store => {
                     const option = document.createElement('div');
                     option.className = 'store-option';
@@ -3307,7 +3415,7 @@
                 
                 // When "همه شهرها" is selected, always reset store to "همه مغازه ها"
                 selectedStore = '';
-                storeSelectorBtn.textContent = 'همه مغازه ها';
+                storeSelectorBtn.textContent = getAllStoresLabel();
             }
             
             // Re-attach event listeners to new store options
@@ -3337,12 +3445,12 @@
                     } else {
                         // No city change needed, just set the store
                         selectedStore = clickedStore;
-                        storeSelectorBtn.textContent = clickedStore || 'همه مغازه ها';
+                        storeSelectorBtn.textContent = clickedStore || getAllStoresLabel();
                     }
                 } else {
                     // "همه مغازه ها" selected
                     selectedStore = '';
-                    storeSelectorBtn.textContent = 'همه مغازه ها';
+                    storeSelectorBtn.textContent = getAllStoresLabel();
                 }
                 
                 storeDropdown.classList.remove('show');
@@ -6041,6 +6149,7 @@
                     // Show admin dashboard and hide main content
                     mainContentArea.style.display = 'none';
                     document.querySelector('.search-bar').style.display = 'none';
+                    setLoggedInSearchMode(false);
                     mainHeader.classList.add('header-admin-mode');
                     adminDashboard.classList.add('show');
                 } else {
@@ -6061,6 +6170,7 @@
             if (addPage && (addPage.style.display === 'block' || addPage.classList.contains('show'))) {
                 addPage.classList.remove('show');
                 addPage.style.display = 'none';
+                setLoggedInSearchMode(false);
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 return;
@@ -6070,6 +6180,7 @@
             if (deleteEditPage && (deleteEditPage.style.display === 'block' || deleteEditPage.classList.contains('show'))) {
                 deleteEditPage.classList.remove('show');
                 deleteEditPage.style.display = 'none';
+                setLoggedInSearchMode(false);
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 return;
@@ -6079,6 +6190,7 @@
             if (mainContentArea.style.display === 'block' && isAuthenticated()) {
                 mainContentArea.style.display = 'none';
                 document.querySelector('.search-bar').style.display = 'none';
+                setLoggedInSearchMode(false);
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 // Clear search results when going back
@@ -6089,6 +6201,7 @@
             // Otherwise, clear token and go back to main page
             clearToken();
             mainHeader.classList.remove('header-admin-mode');
+            setLoggedInSearchMode(false);
             adminDashboard.classList.remove('show');
             mainContentArea.style.display = 'block';
             document.querySelector('.search-bar').style.display = 'flex';
@@ -6846,12 +6959,12 @@
             console.error('headerProductsBtn not found');
         }
 
-        updatePricesBtn.addEventListener('click', async function() {
+        if (headerUpdatePricesBtn) {
+        headerUpdatePricesBtn.addEventListener('click', async function() {
             // آپدیت قیمت ها - trigger webhook
             if (!requireAuth()) return;
             
-            const updatePricesStatus = document.getElementById('updatePricesStatus');
-            const originalButtonText = updatePricesBtn.textContent;
+            const originalButtonText = headerUpdatePricesBtn.textContent;
             
             try {
                 const token = getToken();
@@ -6863,9 +6976,8 @@
                 }
                 
                 // Show loading status
-                updatePricesBtn.disabled = true;
-                updatePricesStatus.textContent = 'در حال بروز رسانی...';
-                updatePricesStatus.style.display = 'block';
+                headerUpdatePricesBtn.disabled = true;
+                headerUpdatePricesBtn.textContent = 'در حال بروز رسانی...';
                 
                 const response = await fetch('https://33140-nwo6p.s1.irann8n.com/webhook/5906c811-a199-49c6-bd96-1f2e1cdf6e53', {
                     method: 'POST',
@@ -6885,8 +6997,8 @@
                     if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
                         clearToken();
                         requireAuth();
-                        updatePricesStatus.style.display = 'none';
-                        updatePricesBtn.disabled = false;
+                        headerUpdatePricesBtn.disabled = false;
+                        headerUpdatePricesBtn.textContent = originalButtonText;
                         return;
                     }
                     throw new Error('خطا در به‌روزرسانی قیمت‌ها');
@@ -6894,9 +7006,6 @@
                 
                 const data = await response.json();
                 if (response.ok) {
-                    // Hide status message on success
-                    updatePricesStatus.style.display = 'none';
-                    
                     // Check nextPage value from response
                     if (data.nextPage) {
                         if (data.nextPage === 'login') {
@@ -6919,13 +7028,92 @@
                 }
             } catch (error) {
                 console.error('Update prices error:', error);
-                updatePricesStatus.style.display = 'none';
                 alert('خطا در به‌روزرسانی قیمت‌ها');
             } finally {
                 // Re-enable button
-                updatePricesBtn.disabled = false;
+                headerUpdatePricesBtn.disabled = false;
+                headerUpdatePricesBtn.textContent = originalButtonText;
             }
         });
+        } else {
+            console.error('headerUpdatePricesBtn not found');
+        }
+
+        if (bankSearchBtn) {
+        bankSearchBtn.addEventListener('click', async function() {
+            // جستوجو در بنک ها - trigger page navigation webhook
+            if (!requireAuth()) return;
+
+            const originalButtonText = bankSearchBtn.textContent;
+
+            try {
+                const token = getToken();
+                const username = getUsername();
+
+                if (!token) {
+                    alert('لطفاً ابتدا وارد شوید');
+                    return;
+                }
+
+                bankSearchBtn.disabled = true;
+                bankSearchBtn.textContent = 'در حال ارسال...';
+
+                const response = await fetch(PAGE_NAVIGATION_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(addTrackingFields({
+                        action: 'bank_search',
+                        token: token,
+                        username: username,
+                        timestamp: new Date().toISOString()
+                    }))
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.message && (errorData.message.includes('token') || errorData.message.includes('unauthorized'))) {
+                        clearToken();
+                        requireAuth();
+                        return;
+                    }
+                    throw new Error('خطا در ارتباط با سرور');
+                }
+
+                const data = await response.json().catch(() => ({}));
+                const nextPage = data.nextpage || data.nextPage || '';
+                if (nextPage === 'login') {
+                    clearToken();
+                    requireAuth();
+                    return;
+                }
+
+                // Enter bank-search mode and show the same main search page UI.
+                applySearchMode('bank');
+                selectedCity = null;
+                selectedStore = '';
+                citySelectorBtn.textContent = 'همه شهرها';
+                updateStoreList('');
+                storeSelectorBtn.textContent = getAllStoresLabel();
+                searchResults.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>برای جستجو، ابتدا شهر سپس نوع طلا، قیمت و ... را در پایین وارد کنید</div></div>';
+                adminDashboard.classList.remove('show');
+                mainHeader.classList.remove('header-admin-mode');
+                setLoggedInSearchMode(true);
+                mainContentArea.style.display = 'block';
+                document.querySelector('.search-bar').style.display = 'flex';
+                backBtn.style.display = 'flex';
+            } catch (error) {
+                console.error('Bank search error:', error);
+                alert('خطا در ارتباط با سرور');
+            } finally {
+                bankSearchBtn.disabled = false;
+                bankSearchBtn.textContent = originalButtonText;
+            }
+        });
+        } else {
+            console.error('bankSearchBtn not found');
+        }
 
         deleteEditBtn.addEventListener('click', async function() {
             // حذف یا ادیت - trigger webhook and check response
