@@ -2824,13 +2824,32 @@
         if (!cityData['انلاین']) {
             cityData['انلاین'] = cityData['آنلاین'];
         }
+
+        // Bank search ("جستوجو در بنک ها"): separate store lists per city, no آنلاین in UI
+        const bankCityData = {
+            'آمل': {
+                stores: ['ویزیتور جعفری', 'بنک ساکت'],
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/697158a1-c916-4f94-936f-2bc5984dee01'
+            },
+            'بابل': {
+                stores: ['بنک الماسی', 'بنک شمس'],
+                webhookUrl: 'https://33140-nwo6p.s1.irann8n.com/webhook-test/e1acb745-4ec3-43cf-9ba5-48ffcfcbe745'
+            }
+        };
+
+        let isBankSearchMode = false;
+
+        function getActiveCityData() {
+            return isBankSearchMode ? bankCityData : cityData;
+        }
         
         // Function to find city by store name
         function findCityByStore(storeName) {
             if (!storeName || storeName === '') {
                 return null;
             }
-            for (const [city, data] of Object.entries(cityData)) {
+            const source = getActiveCityData();
+            for (const [city, data] of Object.entries(source)) {
                 if (data.stores.includes(storeName)) {
                     return city;
                 }
@@ -2844,7 +2863,11 @@
                 // Default URL for "همه شهرها" or no city selected
                 return 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
             }
-            if (cityData[city] && cityData[city].webhookUrl) {
+            const source = getActiveCityData();
+            if (source[city] && source[city].webhookUrl) {
+                return source[city].webhookUrl;
+            }
+            if (!isBankSearchMode && cityData[city] && cityData[city].webhookUrl) {
                 return cityData[city].webhookUrl;
             }
             // Default URL for any other city
@@ -2859,10 +2882,18 @@
         const ADMIN_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/0bb445e1-3e17-4af3-b6f5-668723e9a53c';
         const PAGE_NAVIGATION_WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook/91991a96-0cdd-4dbc-860b-3dc9729a1823';
         let isSending = false;
-        let isBankSearchMode = false;
 
         function getAllStoresLabel() {
             return isBankSearchMode ? 'همه بنک ها' : 'همه مغازه ها';
+        }
+
+        function updateCityDropdownForBankMode() {
+            const el = document.getElementById('cityDropdown');
+            if (!el) return;
+            const onlineOpt = el.querySelector('.store-option[data-city="آنلاین"]');
+            if (onlineOpt) {
+                onlineOpt.style.display = isBankSearchMode ? 'none' : '';
+            }
         }
 
         function applySearchMode(mode) {
@@ -2877,6 +2908,7 @@
                     allOption.textContent = allStoresLabel;
                 }
             }
+            updateCityDropdownForBankMode();
         }
 
         function setLoggedInSearchMode(enabled) {
@@ -3362,9 +3394,10 @@
 
         // Function to update store list based on selected city
         function updateStoreList(city, preserveStoreSelection = false) {
-            if (city && city !== '' && cityData[city]) {
+            const source = getActiveCityData();
+            if (city && city !== '' && source[city]) {
                 // Show only stores for the selected city
-                stores = cityData[city].stores;
+                stores = source[city].stores;
                 WEBHOOK_URL = getWebhookUrlByCity(city);
                 
                 // Update store dropdown
@@ -3398,7 +3431,7 @@
             } else {
                 // No city selected or "همه شهرها" - show all stores from all cities
                 stores = [];
-                Object.values(cityData).forEach(cityInfo => {
+                Object.values(source).forEach(cityInfo => {
                     stores.push(...cityInfo.stores);
                 });
                 WEBHOOK_URL = 'https://33140-nwo6p.s1.irann8n.com/webhook-test/bc6b217a-7c36-4532-830e-1a592ef03390';
@@ -5711,9 +5744,7 @@
                 
                 try {
                     // Use the webhook URL based on selected city, or default
-                    const addressWebhookUrl = selectedCity && cityData[selectedCity]
-                        ? cityData[selectedCity].webhookUrl
-                        : WEBHOOK_URL;
+                    const addressWebhookUrl = getWebhookUrlByCity(selectedCity || null);
 
                     // Build payload: for online city send website action, otherwise address
                     const basePayload = {
@@ -6171,6 +6202,7 @@
                 addPage.classList.remove('show');
                 addPage.style.display = 'none';
                 setLoggedInSearchMode(false);
+                mainHeader.classList.add('header-admin-mode');
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 return;
@@ -6181,16 +6213,26 @@
                 deleteEditPage.classList.remove('show');
                 deleteEditPage.style.display = 'none';
                 setLoggedInSearchMode(false);
+                mainHeader.classList.add('header-admin-mode');
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 return;
             }
             
-            // If main content area is visible (from "10 محصول آخر"), go back to admin dashboard
-            if (mainContentArea.style.display === 'block' && isAuthenticated()) {
+            // If user is in logged-in search flow ("10 محصول آخر" or "جستوجو در بنک ها"),
+            // always go back to admin dashboard.
+            const isLoggedSearchFlow = mainHeader.classList.contains('header-logged-search-mode');
+            if (mainContentArea.style.display === 'block' && (isAuthenticated() || isLoggedSearchFlow)) {
+                applySearchMode('shop');
+                selectedCity = null;
+                selectedStore = '';
+                citySelectorBtn.textContent = 'همه شهرها';
+                updateStoreList(null);
+                storeSelectorBtn.textContent = getAllStoresLabel();
                 mainContentArea.style.display = 'none';
                 document.querySelector('.search-bar').style.display = 'none';
                 setLoggedInSearchMode(false);
+                mainHeader.classList.add('header-admin-mode');
                 adminDashboard.classList.add('show');
                 backBtn.style.display = 'none';
                 // Clear search results when going back
@@ -6200,6 +6242,7 @@
             
             // Otherwise, clear token and go back to main page
             clearToken();
+            applySearchMode('shop');
             mainHeader.classList.remove('header-admin-mode');
             setLoggedInSearchMode(false);
             adminDashboard.classList.remove('show');
